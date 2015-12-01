@@ -16,23 +16,15 @@ from baxter_core_msgs.msg import DigitalIOState
 
 from moveit_commander import MoveGroupCommander
 
-global block1_flag, block2_flag, block3_flag
-global sleep_flag
-global xpos_up,ypos_up
-global left_group
-global scene
-global left_gripper
-global pick_flag
 block1_flag = False
 block2_flag = False
 block3_flag = False
 sleep_flag = True
 xpos_up = 0
 ypos_up = 0
-pick_flag = False
 
 
-def init():
+def InitializeMoveItCommander():
     moveit_commander.roscpp_initialize(sys.argv)
     # Instantiate a RobotCommander object.  This object is an interface to
     # the robot as a whole.
@@ -41,30 +33,34 @@ def init():
 
     ## Instantiate a PlanningSceneInterface object.  This object is an interface
     ## to the world surrounding the robot.
+    global scene
     scene = moveit_commander.PlanningSceneInterface()
+    # rospy.sleep(1)
 
     ## Instantiate a MoveGroupCommander object.  This object is an interface
     ## to one group of joints.  In this case the group is the joints in the left
     ## arm.  This interface can be used to plan and execute motions on the left
     ## arm.
+    global group
+    group = MoveGroupCommander("left_arm")
     
-    left_group = MoveGroupCommander("left_arm")
-    
+    global left_gripper
     left_gripper = baxter_interface.Gripper('left')
     left_gripper.calibrate()
 
-    rospy.sleep(2)
-
-    #Start by going to vision position
+    pose_target = geometry_msgs.msg.Pose()
+     #moving back to vision place
+    print "============ Back to Vision Position"
     pose_target.orientation.x = 1
     pose_target.position.x = 0.7
     pose_target.position.y = 0.5
     pose_target.position.z = 0.3
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan5 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
-    print "In Vision Place"
+
+    rospy.sleep(2)
 
 def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     print "============ Generating Block Pick Up Plan"
@@ -74,9 +70,9 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     pose_target.position.x = xpos_up
     pose_target.position.y = ypos_up
     pose_target.position.z = zpos_up
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan1 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
 
     #Close Baxter's left gripper
@@ -88,9 +84,9 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     pose_target.position.x = 0.7
     pose_target.position.y = 0.4
     pose_target.position.z = 0.3
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan2 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
 
 
@@ -99,9 +95,9 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     pose_target.position.x = 0.83
     pose_target.position.y = 0.1
     pose_target.position.z = zpos_down 
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan3 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
 
 
@@ -116,9 +112,9 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     pose_target.position.x = 0.85
     pose_target.position.y = 0.1
     pose_target.position.z = 0.1
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan4 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
 
     #moving back to vision place
@@ -127,23 +123,25 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     pose_target.position.x = 0.7
     pose_target.position.y = 0.5
     pose_target.position.z = 0.3
-    left_group.set_pose_target(pose_target)
+    group.set_pose_target(pose_target)
     plan5 = group.plan()
-    left_group.go(wait=True)
+    group.go(wait=True)
     rospy.sleep(2)
 
 
 def read_pos(Point):
     # print "in read_pos"
-    global pick_flag
+    global xpos_up, ypos_up
     xpos_up = Point.x
     ypos_up = Point.y
-    pick_flag = True
-
 
 
 def block_counter(count):
     print "In block_counter"
+    global block1_flag, block2_flag, block3_flag
+    block1_flag = False
+    block2_flag = False
+    block3_flag = False
     
     if count == 1:
         print "Setting block1_flag"
@@ -164,20 +162,26 @@ def checkButton(msg):
 
 
 def main():
-    rospy.init_node('move_arm_node')
+    rospy.init_node('move_block')
 
-    print 'Init function'
-    init()
+    print "===========Initializing MoveIt Commander"
+    InitializeMoveItCommander()
 
-    #Subscribes to the vision node
+    #check for cuff button press
+    rospy.Subscriber("/robot/digital_io/left_lower_button/state", DigitalIOState, checkButton)
+
+    #finds postion of green objects
     rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
     rospy.sleep(0.05)
    
     count = 1
     while not rospy.is_shutdown():
+
+
         block_counter(count)
         rospy.sleep(1)
 
+        global block1_flag, block2_flag, block3_flag
         if block1_flag == True:
             zpos_up = 0.02
             zpos_down = -0.06
@@ -190,8 +194,8 @@ def main():
             zpos_up = -0.06
             zpos_down = 0.02
 
-        #print xpos_up, ypos_up, zpos_up, zpos_down
-            
+        print xpos_up, ypos_up, zpos_up, zpos_down
+        
         move_block(xpos_up, ypos_up, zpos_up, zpos_down)
 
         count = count +1
