@@ -1,0 +1,38 @@
+<launch>
+  <arg name="config" default="true"/>
+
+  <!--Node for trajectories, used with MoveIt -->
+  <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
+  </node>   
+
+<!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
+
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+  <!--node name="joint_state_publisher" pkg="joint_state_publisher" type="joint_state_publisher">
+    <param name="/use_gui" value="false"/>
+  </node-->
+  
+  <!--node name="robot_state_publisher" pkg="robot_state_publisher" type="robot_state_publisher" respawn="true" output="screen" /-->
+
+  <arg name="kinect" default="false" />
+  <arg name="xtion" default="false" />
+  <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
+  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+    <arg name="kinect" value="$(arg kinect)" />
+    <arg name="xtion" value="$(arg xtion)" />
+    <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
+    <arg name="allow_trajectory_execution" value="true"/>
+  </include>
+
+<!--Start the move_arm node from our scripts -->
+  <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
+  </node>
+
+  <!--Node that uses camera to find block -->
+  <node pkg="baxter_block_stack" type="open_cv_vision.py" name="camera_node" output="log" >
+  </node>
+
+</launch>
