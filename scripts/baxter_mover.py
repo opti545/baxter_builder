@@ -16,12 +16,10 @@ from baxter_core_msgs.msg import DigitalIOState
 
 from moveit_commander import MoveGroupCommander
 
-block1_flag = False
-block2_flag = False
-block3_flag = False
 sleep_flag = True
-xpos_up = 0
-ypos_up = 0
+xpos = 0
+ypos = 0
+zpos = 0
 
 
 def init():
@@ -29,7 +27,9 @@ def init():
     baxter_interface.RobotEnable().enable()
     rospy.sleep(0.25)
     print "Baxter is enabled"
-
+    
+    global stopflag
+    stopflag = False
     #Taken from the MoveIt Tutorials
     moveit_commander.roscpp_initialize(sys.argv)
     robot = moveit_commander.RobotCommander()
@@ -48,25 +48,27 @@ def init():
     pose_target = geometry_msgs.msg.Pose()
      #moving back to vision place
     print "Moving to Vision State"
-    pose_target.orientation.x = 1
-    pose_target.position.x = 0.782
-    pose_target.position.y = 0.227
-    pose_target.position.z = -0.112
+    pose_target.orientation = Quaternion(-0.009, 0.999, 0.002, -0.051)
+    pose_target.position = Point(0.627, 0.272, 0.228)
     group.set_pose_target(pose_target)
     plan5 = group.plan()
-    group.go(wait=True)
     rospy.sleep(2)
+    group.go(wait=True)
+    group.clear_pose_targets()
 
 
-def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
+def move_to_block(xposl, yposl, zposl):
+    
     pose_target = geometry_msgs.msg.Pose()
 
-    pose_target.orientation.x = 1 
-    pose_target.position.x = xpos_up
-    pose_target.position.y = ypos_up
-    pose_target.position.z = zpos_up
+    print "Going to middle pose"
+    pose_target.orientation.x = 1
+    pose_target.position.x = xposl
+    pose_target.position.y = yposl
+    pose_target.position.z = zposl
     group.set_pose_target(pose_target)
-    plan1 = group.plan()
+    plan2 = group.plan()
+    rospy.sleep(2)
     group.go(wait=True)
     rospy.sleep(2)
 
@@ -74,57 +76,32 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     left_gripper.close()
     rospy.sleep(2)
 
-    print "Going to middle pose"
-    pose_target.orientation.x = 1
-    pose_target.position.x = 0.7
-    pose_target.position.y = 0.4
-    pose_target.position.z = 0.3
-    group.set_pose_target(pose_target)
-    plan2 = group.plan()
-    group.go(wait=True)
-    rospy.sleep(2)
-
-
-    #Open Baxter's left gripper to drop in box
-    left_gripper.open()
-    rospy.sleep(2)
-
 
     #Waypoint to vision place
     print "Moving to Vision State"
-    pose_target.orientation.x = 1
-    pose_target.position.x = 0.85
-    pose_target.position.y = 0.1
-    pose_target.position.z = 0.1
+    pose_target.orientation = Quaternion(-0.009, 0.999, 0.002, -0.051)
+    pose_target.position = Point(0.627, 0.272, 0.228)
     group.set_pose_target(pose_target)
     plan4 = group.plan()
+    rospy.sleep(2)
     group.go(wait=True)
     rospy.sleep(2)
 
-def read_pos(Point):
+
+
+def read_pos(msg):
     # print "in read_pos"
-    global xpos_up, ypos_up
-    xpos_up = Point.x
-    ypos_up = Point.y
+    print "Reading from Callback"
+    print msg
 
+    global xpos, ypos, zpos
+    global sleep_flag
 
-def block_counter(count):
-    print "In block_counter"
-    global block1_flag, block2_flag, block3_flag
-    block1_flag = False
-    block2_flag = False
-    block3_flag = False
-    
-    if count == 1:
-        print "Setting block1_flag"
-        block1_flag = True
-    elif count == 2:
-        print "Setting block2_flag"
-        block2_flag = True
-    elif count == 3:
-        print "Setting block3_flag"
-        block3_flag = True
+    xpos = msg.x
+    ypos = msg.y
+    zpos = msg.z
 
+    sleep_flag = False
 
 def checkButton(msg):
     global sleep_flag
@@ -141,43 +118,20 @@ def main():
 
     print "Subscribing to center_of_object topic to receive points"
     rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
-    rospy.sleep(0.05)
+    rospy.sleep(0.5)
    
     count = 1
+    
     while not rospy.is_shutdown():
-        block_counter(count)
-        rospy.sleep(1)
-
-        global block1_flag, block2_flag, block3_flag
-        if block1_flag == True:
-            zpos_up = 0.02
-            zpos_down = -0.06
-
-        if block2_flag == True:
-            zpos_up = -0.02
-            zpos_down = -0.02
         
-        if block3_flag == True:
-            zpos_up = -0.06
-            zpos_down = 0.02
+        while sleep_flag:
+            pass
 
-        print xpos_up, ypos_up, zpos_up, zpos_down
-        
-        move_block(xpos_up, ypos_up, zpos_up, zpos_down)
-
+        move_to_block(xpos, ypos, zpos)
         count = count +1
 
         global sleep_flag
         sleep_flag = True
-
-        if count > 3:
-            #time to reset blocks
-            print "Sleeping"
-
-            while sleep_flag:
-                pass
-            
-            count = 1
 
 
 if __name__ == '__main__':
