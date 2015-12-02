@@ -79,8 +79,11 @@ def callback(message):
 		# .05 and -.02 is camera offset from gripper
 		#P.x = (cx -(width)/2)*.0025*.3 + .7 + .05 #+.1
 		#P.y = (cy - (height)/2)*.0025*.3 + .5 - .02 #- .1
-		P.x = (cx - (width/2))*.0025*.3 + .7 + .05 #- .1
-		P.y = (cy - (height/2))*.0025*.3 + .5  - .02 #+.1
+		#dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
+		#print "Distance is %f" % dist
+		#dist = dist/1000
+		P.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
+		P.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
 
 		pub.publish(P)
 
