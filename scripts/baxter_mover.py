@@ -52,8 +52,8 @@ def move_to_vision():
     pose_target = geometry_msgs.msg.Pose()
      #moving back to vision place
     print "Moving to Vision State"
-    pose_target.orientation = Quaternion(-0.062, 0.997, 0.021, -0.042)
-    pose_target.position = Point(0.603, 0.435, 0.087)
+    pose_target.orientation = Quaternion(-0.078, 0.996, 0.014, -0.032)
+    pose_target.position = Point(0.623, 0.414, 0.201)
     group.set_pose_target(pose_target)
     plan5 = group.plan()
     rospy.sleep(2)
@@ -110,13 +110,12 @@ def main():
 
     print "Subscribing to center_of_object topic to receive points"
     rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
-    rospy.sleep(0.5)
+    rospy.sleep(1)
    
     count = 1
     
     while not rospy.is_shutdown():
         global sleep_flag
-        \
         while sleep_flag:
             pass
 
