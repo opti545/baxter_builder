@@ -97,17 +97,14 @@ def main():
 	cv2.namedWindow("Original", 1)
 	cv2.namedWindow("Thresholded", 2)
 
-
 	#Initiate node for left hand camera
-	rospy.init_node('left_hand_camera', anonymous=True)
+	rospy.init_node('left_hand_camera')
 
 	#Subscribe to left hand camera image 
 	rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
 
 	#Keep from exiting until this node is stopped
 	rospy.spin()
- 
-	
          
 if __name__ == '__main__':
      main()

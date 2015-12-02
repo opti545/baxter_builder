@@ -24,23 +24,20 @@ xpos_up = 0
 ypos_up = 0
 
 
-def InitializeMoveItCommander():
-    moveit_commander.roscpp_initialize(sys.argv)
-    # Instantiate a RobotCommander object.  This object is an interface to
-    # the robot as a whole.
-    robot = moveit_commander.RobotCommander()
-    # rospy.sleep(1)
+def init():
+    #Wake up Baxter
+    baxter_interface.RobotEnable().enable()
+    rospy.sleep(0.25)
+    print "Baxter is enabled"
 
-    ## Instantiate a PlanningSceneInterface object.  This object is an interface
-    ## to the world surrounding the robot.
+    #Taken from the MoveIt Tutorials
+    moveit_commander.roscpp_initialize(sys.argv)
+    robot = moveit_commander.RobotCommander()
+
     global scene
     scene = moveit_commander.PlanningSceneInterface()
-    # rospy.sleep(1)
 
-    ## Instantiate a MoveGroupCommander object.  This object is an interface
-    ## to one group of joints.  In this case the group is the joints in the left
-    ## arm.  This interface can be used to plan and execute motions on the left
-    ## arm.
+    #Activate Left Arm to be used with MoveIt
     global group
     group = MoveGroupCommander("left_arm")
     
@@ -50,20 +47,18 @@ def InitializeMoveItCommander():
 
     pose_target = geometry_msgs.msg.Pose()
      #moving back to vision place
-    print "============ Back to Vision Position"
+    print "Moving to Vision State"
     pose_target.orientation.x = 1
-    pose_target.position.x = 0.7
-    pose_target.position.y = 0.5
-    pose_target.position.z = 0.3
+    pose_target.position.x = 0.782
+    pose_target.position.y = 0.227
+    pose_target.position.z = -0.112
     group.set_pose_target(pose_target)
     plan5 = group.plan()
     group.go(wait=True)
     rospy.sleep(2)
 
-    rospy.sleep(2)
 
 def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
-    print "============ Generating Block Pick Up Plan"
     pose_target = geometry_msgs.msg.Pose()
 
     pose_target.orientation.x = 1 
@@ -79,7 +74,7 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     left_gripper.close()
     rospy.sleep(2)
 
-    print "============ Generating waypoint plan"
+    print "Going to middle pose"
     pose_target.orientation.x = 1
     pose_target.position.x = 0.7
     pose_target.position.y = 0.4
@@ -90,24 +85,13 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     rospy.sleep(2)
 
 
-    print "============ Generating block placement plan"
-    pose_target.orientation.x = 1
-    pose_target.position.x = 0.83
-    pose_target.position.y = 0.1
-    pose_target.position.z = zpos_down 
-    group.set_pose_target(pose_target)
-    plan3 = group.plan()
-    group.go(wait=True)
-    rospy.sleep(2)
-
-
-    #Close Baxter's left gripper
+    #Open Baxter's left gripper to drop in box
     left_gripper.open()
     rospy.sleep(2)
 
 
     #Waypoint to vision place
-    print "============ Generating return plan"
+    print "Moving to Vision State"
     pose_target.orientation.x = 1
     pose_target.position.x = 0.85
     pose_target.position.y = 0.1
@@ -116,18 +100,6 @@ def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
     plan4 = group.plan()
     group.go(wait=True)
     rospy.sleep(2)
-
-    #moving back to vision place
-    print "============ Back to Vision Position"
-    pose_target.orientation.x = 1
-    pose_target.position.x = 0.7
-    pose_target.position.y = 0.5
-    pose_target.position.z = 0.3
-    group.set_pose_target(pose_target)
-    plan5 = group.plan()
-    group.go(wait=True)
-    rospy.sleep(2)
-
 
 def read_pos(Point):
     # print "in read_pos"
@@ -162,22 +134,17 @@ def checkButton(msg):
 
 
 def main():
-    rospy.init_node('move_block')
+    rospy.init_node('baxter_mover_node')
 
-    print "===========Initializing MoveIt Commander"
-    InitializeMoveItCommander()
+    print "Initializing all MoveIt related functions"
+    init()
 
-    #check for cuff button press
-    rospy.Subscriber("/robot/digital_io/left_lower_button/state", DigitalIOState, checkButton)
-
-    #finds postion of green objects
+    print "Subscribing to center_of_object topic to receive points"
     rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
     rospy.sleep(0.05)
    
     count = 1
     while not rospy.is_shutdown():
-
-
         block_counter(count)
         rospy.sleep(1)
 
@@ -205,7 +172,7 @@ def main():
 
         if count > 3:
             #time to reset blocks
-            print "==========Sleeping"
+            print "Sleeping"
 
             while sleep_flag:
                 pass
