@@ -27,7 +27,7 @@
   </node>
 
   <!--Node that uses camera to find block -->
-  <node pkg="baxter_builder" type="open_cv_vision.py" name="camera_node" output="log" >
+  <node pkg="baxter_builder" type="open_cv_vision.py" name="camera_node" output="screen" >
   </node>
 
 </launch>
