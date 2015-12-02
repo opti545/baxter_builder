@@ -21,7 +21,6 @@ xpos = 0
 ypos = 0
 zpos = 0
 
-
 def init():
     #Wake up Baxter
     baxter_interface.RobotEnable().enable()
@@ -45,17 +44,22 @@ def init():
     left_gripper = baxter_interface.Gripper('left')
     left_gripper.calibrate()
 
+    move_to_vision()
+
+
+
+def move_to_vision():
     pose_target = geometry_msgs.msg.Pose()
      #moving back to vision place
     print "Moving to Vision State"
-    pose_target.orientation = Quaternion(-0.009, 0.999, 0.002, -0.051)
-    pose_target.position = Point(0.627, 0.272, 0.228)
+    pose_target.orientation = Quaternion(-0.062, 0.997, 0.021, -0.042)
+    pose_target.position = Point(0.603, 0.435, 0.087)
     group.set_pose_target(pose_target)
     plan5 = group.plan()
     rospy.sleep(2)
     group.go(wait=True)
     group.clear_pose_targets()
-
+    rospy.sleep(2)
 
 def move_to_block(xposl, yposl, zposl):
     
@@ -76,15 +80,10 @@ def move_to_block(xposl, yposl, zposl):
     left_gripper.close()
     rospy.sleep(2)
 
+    move_to_vision()
 
-    #Waypoint to vision place
-    print "Moving to Vision State"
-    pose_target.orientation = Quaternion(-0.009, 0.999, 0.002, -0.051)
-    pose_target.position = Point(0.627, 0.272, 0.228)
-    group.set_pose_target(pose_target)
-    plan4 = group.plan()
-    rospy.sleep(2)
-    group.go(wait=True)
+    #Close Baxter's left gripper
+    left_gripper.open()
     rospy.sleep(2)
 
 
@@ -103,13 +102,6 @@ def read_pos(msg):
 
     sleep_flag = False
 
-def checkButton(msg):
-    global sleep_flag
-    sleep_flag = True
-    if msg.state == True:
-        sleep_flag = False
-
-
 def main():
     rospy.init_node('baxter_mover_node')
 
@@ -123,14 +115,13 @@ def main():
     count = 1
     
     while not rospy.is_shutdown():
-        
+        global sleep_flag
+        \
         while sleep_flag:
             pass
 
         move_to_block(xpos, ypos, zpos)
-        count = count +1
 
-        global sleep_flag
         sleep_flag = True
 
 
