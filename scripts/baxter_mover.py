@@ -42,7 +42,7 @@ def init():
     ik_service_right = rospy.ServiceProxy(
             "ExternalTools/right/PositionKinematicsNode/IKService",
             SolvePositionIK)
-    
+
     global stopflag
     stopflag = False
     #Taken from the MoveIt Tutorials
@@ -128,44 +128,44 @@ def move_to_vision():
     # Set pose
     pose = Pose()
     pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
-    pose.position = Point(0.765, 0.035, 0.435)
+    pose.position = Point(0.712, 0.316, 0.250)
 
     # Request service
     request_pose(pose)
 
+
 def move_to_box():
     pose = Pose()
     pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
-    pose.position = Point(0.675, -0.138, 0.412)
+    pose.position = Point(0.737, -0.114, 0.283)
+    request_pose(pose)
 
 
-def pick_and_place():
+def pick_and_place(xposl, yposl, zposl):
     pose = Pose()
-    pose.position = Point(xpos, ypos, zpos)
+    pose.position = Point(xposl, yposl, 0.250)
     pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
 
     request_pose(pose)
     left_gripper.close()
-
-    move_to_vision()
     move_to_box()
-
-
+    left_gripper.open()
+    move_to_vision()
+    sleep_flag = True
 
 
 def read_pos(msg):
-    # print "in read_pos"
-    print "Reading from Callback"
-    print msg
 
     global xpos, ypos, zpos
     global sleep_flag
 
-    xpos = msg.x
-    ypos = msg.y
-    zpos = msg.z
-
-    sleep_flag = False
+    if sleep_flag == True:  
+        xpos = msg.x
+        ypos = msg.y
+        zpos = msg.z
+        print "Using these values"
+        print msg
+        sleep_flag = False
 
 def main():
     rospy.init_node('baxter_mover_node')
@@ -184,7 +184,7 @@ def main():
         while sleep_flag:
             pass
 
-        #move_to_block(xpos, ypos, zpos)
+        pick_and_place(xpos, ypos, zpos)
 
         sleep_flag = True
 
