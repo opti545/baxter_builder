@@ -82,8 +82,8 @@ def callback(message):
 		#dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
 		#print "Distance is %f" % dist
 		#dist = dist/1000
-		P.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
-		P.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
+		P.x = (cx - (width/2))*.0025*.623 + .712 + .05 #- .1
+		P.y = (cy - (height/2))*.0025*.414 + .316  - .02 #+.1
 
 		pub.publish(P)
 
