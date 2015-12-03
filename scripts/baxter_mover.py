@@ -16,6 +16,12 @@ from baxter_core_msgs.msg import DigitalIOState
 
 from moveit_commander import MoveGroupCommander
 
+from std_msgs.msg import Int32
+from geometry_msgs.msg import Pose, PoseStamped
+
+from baxter_core_msgs.srv import ( SolvePositionIK,
+                                   SolvePositionIKRequest )
+
 sleep_flag = True
 xpos = 0
 ypos = 0
@@ -27,6 +33,11 @@ def init():
     rospy.sleep(0.25)
     print "Baxter is enabled"
     
+    global ik_service
+    ik_service = rospy.ServiceProxy(
+            "ExternalTools/left/PositionKinematicsNode/IKService",
+            SolvePositionIK)
+
     global stopflag
     stopflag = False
     #Taken from the MoveIt Tutorials
@@ -46,45 +57,48 @@ def init():
 
     move_to_vision()
 
+def request_pose(pose):
+    # Set stamped pose
+    pose_stamped = PoseStamped()
+    pose_stamped.pose = pose
+    pose_stamped.header.frame_id = "base"
+    pose_stamped.header.stamp = rospy.Time.now()
+
+    # Create IK request 
+    ik_request = SolvePositionIKRequest()
+    ik_request.pose_stamp.append(pose_stamped)
+
+    # Request service
+    try:
+        rospy.wait_for_service("ExternalTools/left/PositionKinematicsNode/IKService", 5.0)
+        ik_response = ik_service(ik_request)
+    except (rospy.ServiceException, rospy.ROSException), error_message:
+        rospy.logerr("Service request failed: %r" %(error_message))
+        sys.exit("ERROR - move_to_observe - Failed to append pose")
+    if ik_response.isValid[0]:
+        limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
+        group.clear_pose_targets()
+        group.set_joint_value_target(limb_joints)
+        plan2= group.plan()
+        rospy.sleep(5)
+        group.go(wait=True)
+    return
+
+
+
 
 
 def move_to_vision():
-    pose_target = geometry_msgs.msg.Pose()
-     #moving back to vision place
-    print "Moving to Vision State"
-    pose_target.orientation = Quaternion(-0.078, 0.996, 0.014, -0.032)
-    pose_target.position = Point(0.623, 0.414, 0.201)
-    group.set_pose_target(pose_target)
-    plan5 = group.plan()
-    rospy.sleep(2)
-    group.go(wait=True)
-    group.clear_pose_targets()
-    rospy.sleep(2)
+    # Set pose
+    pose = Pose()
+    pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
+    pose.position = Point(0.623, 0.414, 0.201)
 
-def move_to_block(xposl, yposl, zposl):
-    
-    pose_target = geometry_msgs.msg.Pose()
+    # Request service
+    request_pose(pose)
 
-    print "Going to middle pose"
-    pose_target.orientation.x = 1
-    pose_target.position.x = xposl
-    pose_target.position.y = yposl
-    pose_target.position.z = zposl
-    group.set_pose_target(pose_target)
-    plan2 = group.plan()
-    rospy.sleep(2)
-    group.go(wait=True)
-    rospy.sleep(2)
 
-    #Close Baxter's left gripper
-    left_gripper.close()
-    rospy.sleep(2)
 
-    move_to_vision()
-
-    #Close Baxter's left gripper
-    left_gripper.open()
-    rospy.sleep(2)
 
 
 
@@ -119,7 +133,7 @@ def main():
         while sleep_flag:
             pass
 
-        move_to_block(xpos, ypos, zpos)
+        #move_to_block(xpos, ypos, zpos)
 
         sleep_flag = True
 
