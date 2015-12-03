@@ -12,9 +12,17 @@ find_package(catkin REQUIRED COMPONENTS
     roscpp
     rospy
     sensor_msgs
+    std_msgs
     trajectory_msgs
     moveit_core
     moveit_ros_planning_interface
+    message_generation
+)
+
+add_service_files(
+    FILES
+    ObjLocation.srv
+    Ready.srv
 )
 
 catkin_package()
