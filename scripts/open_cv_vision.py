@@ -14,13 +14,13 @@ from geometry_msgs.msg import Point
 from cv_bridge import CvBridge, CvBridgeError
 
 #green
-#low_h  = 60
-#high_h = 90
-#low_s  = 85
-#high_s = 175
-#low_v  = 70
-#high_v = 255
-
+low_h  = 60
+high_h = 90
+low_s  = 85
+high_s = 175
+low_v  = 70
+high_v = 255
+'''
 #white
 low_h=0
 high_h=0
@@ -28,7 +28,7 @@ low_s=0
 high_s=0
 low_v=0
 high_v=255
-
+'''
 #blue
 #low_h  = 105
 #high_h = 115
