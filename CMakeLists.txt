@@ -25,6 +25,7 @@ add_service_files(
     Ready.srv
 )
 
+generate_messages(DEPENDENCIES std_msgs)
 catkin_package()
 
 include_directories(
