@@ -14,12 +14,20 @@ from geometry_msgs.msg import Point
 from cv_bridge import CvBridge, CvBridgeError
 
 #green
-low_h  = 60
-high_h = 90
-low_s  = 85
-high_s = 175
-low_v  = 70
-high_v = 255
+#low_h  = 60
+#high_h = 90
+#low_s  = 85
+#high_s = 175
+#low_v  = 70
+#high_v = 255
+
+#white
+low_h=0
+high_h=0
+low_s=0
+high_s=0
+low_v=0
+high_v=255
 
 #blue
 #low_h  = 105
@@ -82,8 +90,8 @@ def callback(message):
 		#dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
 		#print "Distance is %f" % dist
 		#dist = dist/1000
-		P.x = (cx - (width/2))*.0025*.623 + .712 + .05 #- .1
-		P.y = (cy - (height/2))*.0025*.414 + .316  - .02 #+.1
+		P.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
+		P.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
 
 		pub.publish(P)
 
