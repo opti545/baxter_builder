@@ -22,19 +22,24 @@ from geometry_msgs.msg import Pose, PoseStamped
 from baxter_core_msgs.srv import ( SolvePositionIK,
                                    SolvePositionIKRequest )
 
+from baxter_builder.srv import *
+
 sleep_flag = True
 xpos = 0
 ypos = 0
 zpos = 0
 
+global group
+global right_group
 def init():
     #Wake up Baxter
     baxter_interface.RobotEnable().enable()
     rospy.sleep(0.25)
     print "Baxter is enabled"
     
-    global ik_service
-    ik_service = rospy.ServiceProxy(
+    print "Intitializing clients for services"
+    global ik_service_left
+    ik_service_left = rospy.ServiceProxy(
             "ExternalTools/left/PositionKinematicsNode/IKService",
             SolvePositionIK)
 
@@ -42,6 +47,10 @@ def init():
     ik_service_right = rospy.ServiceProxy(
             "ExternalTools/right/PositionKinematicsNode/IKService",
             SolvePositionIK)
+
+    global obj_loc_service 
+    obj_loc_service = rospy.ServiceProxy(
+        "object_location_service", ObjLocation)
 
     global stopflag
     stopflag = False
@@ -53,8 +62,8 @@ def init():
     scene = moveit_commander.PlanningSceneInterface()
 
     #Activate Left Arm to be used with MoveIt
-    global group
-    group = MoveGroupCommander("left_arm")
+    global left_group
+    left_group = MoveGroupCommander("left_arm")
     
     
     global right_group
@@ -62,17 +71,15 @@ def init():
     pose_right = Pose()
     pose_right.position = Point(0.587, -0.579, 0.480)
     pose_right.orientation = Quaternion(0.029, 0.998, -0.046, 0.015)
-    request_pose_right(pose_right)
+    request_pose(pose_right, "right", right_group)
     
 
     global left_gripper
     left_gripper = baxter_interface.Gripper('left')
     left_gripper.calibrate()
 
-    move_to_vision()
 
-
-def request_pose_right(pose):
+def request_pose(pose, arm, groupl):
     # Set stamped pose
     pose_stamped = PoseStamped()
     pose_stamped.pose = pose
@@ -83,45 +90,24 @@ def request_pose_right(pose):
     ik_request = SolvePositionIKRequest()
     ik_request.pose_stamp.append(pose_stamped)
 
+    arm_name_service = "ExternalTools/" + arm + "/PositionKinematicsNode/IKService"
     # Request service
     try:
-        rospy.wait_for_service("ExternalTools/right/PositionKinematicsNode/IKService", 5.0)
-        ik_response = ik_service_right(ik_request)
+        rospy.wait_for_service(arm_name_service, 7.0)
+        if arm == "left":
+            ik_response = ik_service_left(ik_request)
+        else:
+            ik_response = ik_service_right(ik_request)
     except (rospy.ServiceException, rospy.ROSException), error_message:
         rospy.logerr("Service request failed: %r" %(error_message))
         sys.exit("ERROR - move_to_observe - Failed to append pose")
     if ik_response.isValid[0]:
         limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        right_group.set_joint_value_target(limb_joints)
-        plan2= right_group.plan()
+        groupl.set_joint_value_target(limb_joints)
+        plan2= groupl.plan()
         rospy.sleep(5)
-        right_group.go(wait=True)
+        groupl.go(wait=True)
 
-
-def request_pose(pose):
-    # Set stamped pose
-    pose_stamped = PoseStamped()
-    pose_stamped.pose = pose
-    pose_stamped.header.frame_id = "base"
-    pose_stamped.header.stamp = rospy.Time.now()
-
-    # Create IK request 
-    ik_request = SolvePositionIKRequest()
-    ik_request.pose_stamp.append(pose_stamped)
-
-    # Request service
-    try:
-        rospy.wait_for_service("ExternalTools/left/PositionKinematicsNode/IKService", 5.0)
-        ik_response = ik_service(ik_request)
-    except (rospy.ServiceException, rospy.ROSException), error_message:
-        rospy.logerr("Service request failed: %r" %(error_message))
-        sys.exit("ERROR - move_to_observe - Failed to append pose")
-    if ik_response.isValid[0]:
-        limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        group.set_joint_value_target(limb_joints)
-        plan2= group.plan()
-        rospy.sleep(5)
-        group.go(wait=True)
 
 
 def move_to_vision():
@@ -131,63 +117,57 @@ def move_to_vision():
     pose.position = Point(0.712, 0.316, 0.250)
 
     # Request service
-    request_pose(pose)
+    request_pose(pose,"left", left_group)
 
 
 def move_to_box():
     pose = Pose()
     pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
     pose.position = Point(0.737, -0.114, 0.283)
-    request_pose(pose)
+    request_pose(pose, "left", left_group)
 
 
-def pick_and_place(xposl, yposl, zposl):
+def move_to_object(xposl, yposl, zposl, zready = False):
     pose = Pose()
-    pose.position = Point(xposl, yposl, 0.250)
-    pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
+    if zready == True:
+        pose.position = Point(xposl, yposl, zposl)
+        pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
+    else:
+        pose.position = Point(xposl, yposl, 0.250)
+        pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
+    
+    request_pose(pose, "left", left_group)
 
-    request_pose(pose)
-    left_gripper.close()
-    move_to_box()
-    left_gripper.open()
-    move_to_vision()
-    sleep_flag = True
-
-
-def read_pos(msg):
-
-    global xpos, ypos, zpos
-    global sleep_flag
-
-    if sleep_flag == True:  
-        xpos = msg.x
-        ypos = msg.y
-        zpos = msg.z
-        print "Using these values"
-        print msg
-        sleep_flag = False
 
 def main():
     rospy.init_node('baxter_mover_node')
-
-    print "Initializing all MoveIt related functions"
+    print "Initializing all MoveIt related functions and services"
     init()
-
-    print "Subscribing to center_of_object topic to receive points"
-    rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
-    rospy.sleep(1)
-   
-    count = 1
-    
+    print "Move to Vision Pose"
+    move_to_vision()
+    global objec_location_calc
+    objec_location_calc = True
     while not rospy.is_shutdown():
-        global sleep_flag
-        while sleep_flag:
-            pass
-
-        pick_and_place(xpos, ypos, zpos)
-
-        sleep_flag = True
-
+        try:
+            print "Waiting for Object Location Service"
+            rospy.wait_for_service('object_location_service')
+            print "Done Waiting for Object Location Service"
+            response = obj_loc_service(objec_location_calc)
+            if response.objFound == True:
+                move_to_object(response.x, response.y, response.z, response.zready)
+                if response.zready == True:
+                    #Move in Z Direction
+                    move_to_object(response.x, response.y, response.z, response.zready)
+                    #TODO: Do that here function
+                    left_gripper.close()
+                    move_to_box()
+                    left_gripper.open()
+                    move_to_vision()
+            else:
+                #Move to random pose
+                print "Moving to random pose"
+        except rospy.ServiceException, e:
+            print "Service call failed: %s" % e
 
 if __name__ == '__main__':
     main()
