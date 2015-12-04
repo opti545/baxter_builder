@@ -1,6 +1,5 @@
 <launch>
   <arg name="config" default="true"/>
-  <arg name="use_hard" default="false"/>
 
 
   <!--Node for trajectories, used with MoveIt -->
@@ -28,9 +27,7 @@
   <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
   </node>
 
-  <group if="$(arg use_hard)">
-    <!--Node that uses camera to find block -->
-    <node pkg="baxter_builder" type="open_cv_vision.py" name="camera_node" output="screen">
-    </node>
-  </group>
+  <!--Node that uses camera to find block -->
+  <node pkg="baxter_builder" type="open_cv_vision.py" name="camera_node" output="screen">
+  </node>
 </launch>
