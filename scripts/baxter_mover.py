@@ -93,7 +93,7 @@ def request_pose(pose, arm, groupl):
     arm_name_service = "ExternalTools/" + arm + "/PositionKinematicsNode/IKService"
     # Request service
     try:
-        rospy.wait_for_service(arm_name_service, 7.0)
+        rospy.wait_for_service(arm_name_service, 5.0)
         if arm == "left":
             ik_response = ik_service_left(ik_request)
         else:
@@ -103,11 +103,12 @@ def request_pose(pose, arm, groupl):
         sys.exit("ERROR - move_to_observe - Failed to append pose")
     if ik_response.isValid[0]:
         limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
+        groupl.clear_pose_targets()
+        groupl.set_start_state_to_current_state()
         groupl.set_joint_value_target(limb_joints)
-        plan2= groupl.plan()
-        rospy.sleep(5)
+        plan2= groupl.plan(limb_joints)
+        rospy.sleep(3)
         groupl.go(wait=True)
-
 
 
 def move_to_vision():
@@ -156,9 +157,9 @@ def main():
             if response.objFound == True:
                 move_to_object(response.x, response.y, response.z, response.zready)
                 if response.zready == True:
+                    #TODO: Do that here function
                     #Move in Z Direction
                     move_to_object(response.x, response.y, response.z, response.zready)
-                    #TODO: Do that here function
                     left_gripper.close()
                     move_to_box()
                     left_gripper.open()
