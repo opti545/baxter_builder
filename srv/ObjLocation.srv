@@ -1,6 +1,7 @@
-
+bool startobjloc
 ---
-bool zflag
 float32 xb
 float32 yb
 float32 zb
+bool zflag
+bool objfound
