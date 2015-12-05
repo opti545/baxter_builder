@@ -28,6 +28,6 @@
   </node>
 
   <!--Node that uses camera to find block -->
-  <node pkg="baxter_builder" type="open_cv_vision.py" name="camera_node" output="screen">
+  <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
   </node>
 </launch>
