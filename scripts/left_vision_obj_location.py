@@ -23,7 +23,7 @@ low_s  = 85
 high_s = 175
 low_v  = 70
 high_v = 255
-
+'''
 #white
 low_h=0
 high_h=0
@@ -39,9 +39,11 @@ low_s  = 135
 high_s = 160
 low_v  = 20
 high_v = 60
-
-global obj_found = True
-global correct_location = False
+'''
+global obj_found
+obj_found = True
+global correct_location 
+correct_location = False
 
 #Object centroid position in the baxter's stationary base frame 
 xb = 0
@@ -54,7 +56,7 @@ pb = Point()
 Thresholds camera image and stores object centroid location (x,y) in camera's frame.
 '''
 def callback(message):
-
+    global xb, yb
     #Capturing image of web camera
     bridge = CvBridge()
 
@@ -104,9 +106,8 @@ def callback(message):
 
 
         #Position in the baxter's stationary base frame
-        xb = (cx - (width/2))*.0023*.393 + .8 + .05 #- .1
-        yb = (cy - (height/2))*.0023*.393 + .6  - .02 #+.1
-        
+        xb = (cy - (height/2))*.0023*.433 + .712 + .03   #- .1
+        yb = (cx - (width/2))*.0023*.433 + .316  - .02 #+.1
 
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
