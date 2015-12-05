@@ -103,7 +103,7 @@ def request_pose(pose, arm, groupl):
         sys.exit("ERROR - move_to_observe - Failed to append pose")
     if ik_response.isValid[0]:
         limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        groupl.clear_pose_targets()
+        #groupl.clear_pose_targets()
         groupl.set_start_state_to_current_state()
         groupl.set_joint_value_target(limb_joints)
         plan2= groupl.plan(limb_joints)
@@ -114,7 +114,7 @@ def request_pose(pose, arm, groupl):
 def move_to_vision():
     # Set pose
     pose = Pose()
-    pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
+    pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     pose.position = Point(0.712, 0.316, 0.250)
 
     # Request service
@@ -123,7 +123,7 @@ def move_to_vision():
 
 def move_to_box():
     pose = Pose()
-    pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
+    pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     pose.position = Point(0.737, -0.114, 0.283)
     request_pose(pose, "left", left_group)
 
@@ -132,12 +132,21 @@ def move_to_object(xposl, yposl, zposl, zready = False):
     pose = Pose()
     if zready == True:
         pose.position = Point(xposl, yposl, zposl)
-        pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
+        pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     else:
-        pose.position = Point(xposl, yposl, 0.250)
-        pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
-    
+        pose.position = Point(xposl, yposl, 0.150)
+        pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+
     request_pose(pose, "left", left_group)
+    rospy.sleep(2)
+    
+    poset = Pose()
+    poset.position = Point(xposl, yposl, -0.12)
+    poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+    request_pose(poset, "left", left_group)
+    left_gripper.close()
+    move_to_box()
+    left_gripper.open()
 
 
 def main():
@@ -154,15 +163,19 @@ def main():
             rospy.wait_for_service('object_location_service')
             print "Done Waiting for Object Location Service"
             response = obj_loc_service.call(ObjLocationRequest(object_location_calc))
-            if response.objFound == True:
-                move_to_object(response.x, response.y, response.z, response.zready)
-                if response.zready == True:
+            print response
+            if response.objfound == True:
+                move_to_object(response.xb, response.yb, response.zb, response.zflag)
+                if response.zflag == True:
                     #TODO: Do that here function
                     #Move in Z Direction
-                    move_to_object(response.x, response.y, response.z, response.zready)
-                    left_gripper.close()
-                    move_to_box()
-                    left_gripper.open()
+                    print "hllow"
+                    #move_to_object(response.xb, response.yb, response.zb, response.zflag)
+                    #left_gripper.close()
+                    #move_to_box()
+                    #left_gripper.open()
+                    #move_to_vision()
+                else:
                     move_to_vision()
             else:
                 #Move to random pose
