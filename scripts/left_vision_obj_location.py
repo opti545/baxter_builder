@@ -40,14 +40,8 @@ high_s = 160
 low_v  = 20
 high_v = 60
 
-global obj_found = False
+global obj_found = True
 global correct_location = False
-
-#Object centroid position in the moving camera frame
-xc = 0
-yc = 0
-zc = 0
-pc = Point()
 
 #Object centroid position in the baxter's stationary base frame 
 xb = 0
@@ -94,7 +88,8 @@ def callback(message):
     B = M['m00']
 
     if B>500:
-        cx = int(M['m10']/M['m00'])
+        #Position in the moving camera frame 
+        cx = int(M['m10']/M['m00']) 
         cy = int(M['m01']/M['m00'])
 
         # .0025 is pixel size at 1 meter
@@ -106,11 +101,11 @@ def callback(message):
         #dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
         #print "Distance is %f" % dist
         #dist = dist/1000
-        pc.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
-        pc.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
 
-        xc = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
-        yc = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
+
+        #Position in the baxter's stationary base frame
+        xb = (cx - (width/2))*.0023*.393 + .8 + .05 #- .1
+        yb = (cy - (height/2))*.0023*.393 + .6  - .02 #+.1
         
 
     #Printing to screen the images
@@ -124,24 +119,11 @@ Creates and returns a response with object location info for the object_location
 def get_obj_location(request):
 
     if request.startobjloc == True:
-        # get camera frame
-
-        #Create names for OpenCV images and orient them appropriately
-        cv2.namedWindow("Original", 1)
-        cv2.namedWindow("Thresholded", 2)
-
-        #Subscribe to left hand camera image 
-        rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
-       
-        #scan for objects
 
         if obj_found == False:
             print "No objects were found in the current camera frame. "
-            response.objfound = False
-            response.zready = False
 
         else:
-            response.objfound = True
             print "Object(s) were found in the current camera frame. "
             #Find (x,y,z) coordinate of the centroid of the object inthe camera frame
 
@@ -149,11 +131,9 @@ def get_obj_location(request):
 
             #Check if centroid location is close enough to center of frame 
             if correct_location == True:
-                esponse.zready = True
                 print "Location of the object's centroid is at the center of the camera frame. "
                 print "Ready for grasping. "
             else:
-                esponse.zready = False
                 print "Not ready for grasping. "
 
     return ObjLocationResponse(xb, yb, zb, correct_location, obj_found)
@@ -166,6 +146,13 @@ def main():
 
     #Initiate left hand camera object detection node
     rospy.init_node('left_camera_node')
+
+    #Create names for OpenCV images and orient them appropriately
+    cv2.namedWindow("Original", 1)
+    cv2.namedWindow("Thresholded", 2)
+
+    #Subscribe to left hand camera image 
+    rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
 
     #Declare object location service called object_location_service with ObjLocation service type.
     #All requests are passed to get_obj_location function
