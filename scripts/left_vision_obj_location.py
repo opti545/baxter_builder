@@ -1,6 +1,6 @@
 #!/usr/bin/env python
-#The structure of this file was taken from the baxter_stocking_stuffer project by students in Northwestern's MSR program - Josh Marino, Sabeen Admani, Andrew Turchina and Chu-Chu Igbokwe
-# Message published - opencv/center_of_object - contains x,y,z coordinates as a Point message
+#Reference: the baxter_stocking_stuffer project by students in Northwestern's MSR program - Josh Marino, Sabeen Admani, Andrew Turchina and Chu-Chu Igbokwe
+#Service provided - ObjLocation service - contains x,y,z coordinates of object in baxter's stationary body frame, whether it is ok to grasp and if objects were found in the current frame.
 
 import rospy
 import numpy as np
@@ -23,7 +23,7 @@ low_s  = 85
 high_s = 175
 low_v  = 70
 high_v = 255
-'''
+
 #white
 low_h=0
 high_h=0
@@ -31,21 +31,34 @@ low_s=0
 high_s=0
 low_v=0
 high_v=255
-'''
+
 #blue
-#low_h  = 105
-#high_h = 115
-#low_s  = 135
-#high_s = 160
-#low_v  = 20
-#high_v = 60
+low_h  = 105
+high_h = 115
+low_s  = 135
+high_s = 160
+low_v  = 20
+high_v = 60
 
-xpos = 0
-ypos = 0
-zpos = 0
+global obj_found = False
+global correct_location = False
+
+#Object centroid position in the moving camera frame
+xc = 0
+yc = 0
+zc = 0
+pc = Point()
+
+#Object centroid position in the baxter's stationary base frame 
+xb = 0
+yb = 0
+zb = 0
+pb = Point()
 
 
-#Thresholds image and stores position of object in (x,y) coordinates of the camera's frame, with origin at center.
+'''
+Thresholds camera image and stores object centroid location (x,y) in camera's frame.
+'''
 def callback(message):
 
     #Capturing image of web camera
@@ -84,7 +97,6 @@ def callback(message):
         cx = int(M['m10']/M['m00'])
         cy = int(M['m01']/M['m00'])
 
-        P = Point()
         # .0025 is pixel size at 1 meter
         # .266 is the vertical distance from camera to object
         # .7 and .5 is the position of the gripper in baxter's coordinates
@@ -94,54 +106,57 @@ def callback(message):
         #dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
         #print "Distance is %f" % dist
         #dist = dist/1000
-        P.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
-        P.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
+        pc.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
+        pc.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
 
-        pub.publish(P)
-
+        xc = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
+        yc = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
+        
 
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
     cv2.imshow("Thresholded", thresholded)
     cv2.waitKey(3)
 
-
+'''
+Creates and returns a response with object location info for the object_location_service.
+'''
 def get_obj_location(request):
 
-    response = 1
-    obj_found = False
-    correct_location = False
-
     if request.startobjloc == True:
-       # get camera frame
+        # get camera frame
+
+        #Create names for OpenCV images and orient them appropriately
+        cv2.namedWindow("Original", 1)
+        cv2.namedWindow("Thresholded", 2)
+
+        #Subscribe to left hand camera image 
+        rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
        
-       #scan for objects
+        #scan for objects
 
-       if obj_found == False:
-           print "No objects were found in the current camera frame. "
-           response.objfound = False
-           response.zready = False
-           response.xb = 0.0
-           response.yb = 0.0
-           response.zb = 0.0
-       else:
-           response.objfound = True
-           print "Object(s) were found in the current camera frame. "
-           #Find (x,y,z) coordinate of the centroid of the object
-           response.xb = xpos
-           response.yb = ypos
-           response.zb = zpos
+        if obj_found == False:
+            print "No objects were found in the current camera frame. "
+            response.objfound = False
+            response.zready = False
 
-           #Check if centroid location is close enough to center of frame 
-           if correct_location == True:
-               esponse.zready = True
-               print "Location of the object's centroid is at the center of the camera frame. "
-               print "Ready for grasping. "
-           else:
-               esponse.zready = False
-               print "Not ready for grasping. "
+        else:
+            response.objfound = True
+            print "Object(s) were found in the current camera frame. "
+            #Find (x,y,z) coordinate of the centroid of the object inthe camera frame
 
-    return response
+            #Transform (x,y,z) coordinate to baxter's stationary base frame 
+
+            #Check if centroid location is close enough to center of frame 
+            if correct_location == True:
+                esponse.zready = True
+                print "Location of the object's centroid is at the center of the camera frame. "
+                print "Ready for grasping. "
+            else:
+                esponse.zready = False
+                print "Not ready for grasping. "
+
+    return ObjLocationResponse(xb, yb, zb, correct_location, obj_found)
 
 '''
 Creates a service that provides information about the loaction of an object.
@@ -152,16 +167,9 @@ def main():
     #Initiate left hand camera object detection node
     rospy.init_node('left_camera_node')
 
-    #Create names for OpenCV images and orient them appropriately
-    cv2.namedWindow("Original", 1)
-    cv2.namedWindow("Thresholded", 2)
-
-    #Subscribe to left hand camera image 
-    rospy.Subscriber("/cameras/left_hand_camera/image", Image, self.callback)
-
     #Declare object location service called object_location_service with ObjLocation service type.
     #All requests are passed to get_obj_location function
-    obj_location_srv = rospy.Service("object_location_service", ObjLocation, self.get_obj_location)
+    obj_location_srv = rospy.Service("object_location_service", ObjLocation, get_obj_location)
 
     print "Left - Ready to find object."
 
