@@ -25,7 +25,7 @@
   </include>
 
 <!--Start the move_arm node from our scripts -->
-  <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
+  <node pkg="baxter_builder" type="tanay.py" name="move_arm_node" output ="screen">
   </node>
 
   <group if="$(arg use_hard)">

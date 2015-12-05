@@ -44,78 +44,93 @@ pub = rospy.Publisher('opencv/center_of_object', Point, queue_size = 1)
 #Thresholds image and stores position of object in (x,y) coordinates of the camera's frame, with origin at center.
 def callback(message):
 
-	#Capturing image of web camera
-	bridge = CvBridge()
+    #Capturing image of web camera
+    bridge = CvBridge()
 
-	cv_image = bridge.imgmsg_to_cv2(message, "bgr8")
-	height, width, depth = cv_image.shape
-	#print height, width, depth	
-
-
-	#Converting image to HSV format
-	hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-
-	thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
+    cv_image = bridge.imgmsg_to_cv2(message, "bgr8")
+    height, width, depth = cv_image.shape
+    # print 'height = ', height 
+    # print 'width = ', width 
+    # print 'depth = ', depth 
 
 
-	#Morphological opening (remove small objects from the foreground)
-	thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
-	thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    #Converting image to HSV format
+    hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
-	#Morphological closing (fill small holes in the foreground)
-	thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
-	thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
 
 
-	##Finding center of object
-	ret,thresh = cv2.threshold(thresholded,157,255,0)
-	contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+    #Morphological opening (remove small objects from the foreground)
+    thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
 
-	M = cv2.moments(thresh)
-	
-	A = M['m10']
-	B = M['m00']
-
-	if B>500:
-		cx = int(M['m10']/M['m00'])
-		cy = int(M['m01']/M['m00'])
-
-		P = Point()
-		# .0025 is pixel size at 1 meter
-		# .266 is the vertical distance from camera to object
-		# .7 and .5 is the position of the gripper in baxter's coordinates
-		# .05 and -.02 is camera offset from gripper
-		#P.x = (cx -(width)/2)*.0025*.3 + .7 + .05 #+.1
-		#P.y = (cy - (height)/2)*.0025*.3 + .5 - .02 #- .1
-		#dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
-		#print "Distance is %f" % dist
-		#dist = dist/1000
-		P.x = (cx - (width/2))*.0025*.623 + .603 + .05 #- .1
-		P.y = (cy - (height/2))*.0025*.414 + .435  - .02 #+.1
-
-		pub.publish(P)
+    #Morphological closing (fill small holes in the foreground)
+    thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
 
 
-	#Printing to screen the images
-	cv2.imshow("Original", cv_image)
-	cv2.imshow("Thresholded", thresholded)
-	cv2.waitKey(3)
+    ##Finding center of object
+    ret,thresh = cv2.threshold(thresholded,157,255,0)
+    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+    # cnt = contours[0]
+    M = cv2.moments(thresh)
+    # print 'M: ', M
+    # rect = cv2.minAreaRect(cnt)
+
+    # box = cv2.boxPoints(rect)
+    # box = np.int0(box)
+    # cv2.drawContours(img,[box],0,(0,0,255),2)
+
+    # x,y,w,h = cv2.boundingRect(cnt)
+    # cv2.rectangle(cv_image,(x,y),(x+w,y+h),(0,255,0),2)
+    # A = M['m10']
+    B = M['m00']
+    # B=1000
+
+    if B>500:
+        cx = int(M['m10']/M['m00'])
+        cy = int(M['m01']/M['m00'])
+        # print 'cx = ', cx
+        # print 'cy = ', cy
+        P = Point()
+        # .0025 is pixel size at 1 meter
+        # .266 is the vertical distance from camera to object
+        # .7 and .5 is the position of the gripper in baxter's coordinates
+        # .05 and -.02 is camera offset from gripper
+        #P.x = (cx -(width)/2)*.0025*.3 + .7 + .05 #+.1
+        #P.y = (cy - (height)/2)*.0025*.3 + .5 - .02 #- .1
+        # dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
+        # print "Distance is %f" % dist
+        #dist = dist/1000
+        P.x = (cy - (height/2))*.0023*.393 + .8 + .05 #- .1
+        P.y = (cx - (width/2))*.0023*.393 + .6  - .02 #+.1
+        # ex = (width/2 - cx)
+        # ey = (height/2 - cy)
+        # P.x = 
+        # P.y = 5
+        pub.publish(P)
+
+
+    #Printing to screen the images
+    cv2.imshow("Original", cv_image)
+    cv2.imshow("Thresholded", thresholded)
+    cv2.waitKey(3)
 
 #Subscribes to left hand camera image feed
 def main():
 
-	#Create names for OpenCV images and orient them appropriately
-	cv2.namedWindow("Original", 1)
-	cv2.namedWindow("Thresholded", 2)
+    #Create names for OpenCV images and orient them appropriately
+    cv2.namedWindow("Original", 1)
+    cv2.namedWindow("Thresholded", 2)
 
-	#Initiate node for left hand camera
-	rospy.init_node('left_hand_camera')
+    #Initiate node for left hand camera
+    rospy.init_node('left_hand_camera')
 
-	#Subscribe to left hand camera image 
-	rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
+    #Subscribe to left hand camera image 
+    rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
 
-	#Keep from exiting until this node is stopped
-	rospy.spin()
+    #Keep from exiting until this node is stopped
+    rospy.spin()
          
 if __name__ == '__main__':
      main()

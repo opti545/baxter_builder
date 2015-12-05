@@ -16,178 +16,196 @@ from baxter_core_msgs.msg import DigitalIOState
 
 from moveit_commander import MoveGroupCommander
 
-from std_msgs.msg import Int32
-from geometry_msgs.msg import Pose, PoseStamped
-
-from baxter_core_msgs.srv import ( SolvePositionIK,
-                                   SolvePositionIKRequest )
-
+block1_flag = False
+block2_flag = False
+block3_flag = False
 sleep_flag = True
-xpos = 0
-ypos = 0
-zpos = 0
+xpos_up = 0
+ypos_up = 0
 
-def init():
-    #Wake up Baxter
-    baxter_interface.RobotEnable().enable()
-    rospy.sleep(0.25)
-    print "Baxter is enabled"
-    
-    global ik_service
-    ik_service = rospy.ServiceProxy(
-            "ExternalTools/left/PositionKinematicsNode/IKService",
-            SolvePositionIK)
 
-    global ik_service_right
-    ik_service_right = rospy.ServiceProxy(
-            "ExternalTools/right/PositionKinematicsNode/IKService",
-            SolvePositionIK)
-
-    global stopflag
-    stopflag = False
-    #Taken from the MoveIt Tutorials
+def InitializeMoveItCommander():
     moveit_commander.roscpp_initialize(sys.argv)
+    # Instantiate a RobotCommander object.  This object is an interface to
+    # the robot as a whole.
     robot = moveit_commander.RobotCommander()
+    # rospy.sleep(1)
 
+    ## Instantiate a PlanningSceneInterface object.  This object is an interface
+    ## to the world surrounding the robot.
     global scene
     scene = moveit_commander.PlanningSceneInterface()
+    # rospy.sleep(1)
 
-    #Activate Left Arm to be used with MoveIt
+    ## Instantiate a MoveGroupCommander object.  This object is an interface
+    ## to one group of joints.  In this case the group is the joints in the left
+    ## arm.  This interface can be used to plan and execute motions on the left
+    ## arm.
     global group
     group = MoveGroupCommander("left_arm")
     
-    
-    global right_group
-    right_group = MoveGroupCommander("right_arm")
-    pose_right = Pose()
-    pose_right.position = Point(0.587, -0.579, 0.480)
-    pose_right.orientation = Quaternion(0.029, 0.998, -0.046, 0.015)
-    request_pose_right(pose_right)
-    
-
     global left_gripper
     left_gripper = baxter_interface.Gripper('left')
-    left_gripper.calibrate()
-
-    move_to_vision()
+    # left_gripper.calibrate()
 
 
-def request_pose_right(pose):
-    # Set stamped pose
-    pose_stamped = PoseStamped()
-    pose_stamped.pose = pose
-    pose_stamped.header.frame_id = "base"
-    pose_stamped.header.stamp = rospy.Time.now()
+    ## We create this DisplayTrajectory publisher which is used below to publish
+    ## trajectories for RVIZ to visualize.
+    display_trajectory_publisher = rospy.Publisher('/move_group/display_planned_path', moveit_msgs.msg.DisplayTrajectory)
 
-    # Create IK request 
-    ik_request = SolvePositionIKRequest()
-    ik_request.pose_stamp.append(pose_stamped)
+    rospy.sleep(2)
 
-    # Request service
-    try:
-        rospy.wait_for_service("ExternalTools/right/PositionKinematicsNode/IKService", 5.0)
-        ik_response = ik_service_right(ik_request)
-    except (rospy.ServiceException, rospy.ROSException), error_message:
-        rospy.logerr("Service request failed: %r" %(error_message))
-        sys.exit("ERROR - move_to_observe - Failed to append pose")
-    if ik_response.isValid[0]:
-        limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        right_group.set_joint_value_target(limb_joints)
-        plan2= right_group.plan()
-        rospy.sleep(5)
-        right_group.go(wait=True)
+def move_block(xpos_up, ypos_up, zpos_up, zpos_down):
+    print "============ Generating Block Pick Up Plan"
+    pose_target = geometry_msgs.msg.Pose()
 
+    pose_target.orientation.x = 1 
+    pose_target.position.x = xpos_up
+    pose_target.position.y = ypos_up
+    pose_target.position.z = zpos_up
+    group.set_pose_target(pose_target)
+    plan1 = group.plan()
+    group.go(wait=True)
+    rospy.sleep(2)
 
-def request_pose(pose):
-    # Set stamped pose
-    pose_stamped = PoseStamped()
-    pose_stamped.pose = pose
-    pose_stamped.header.frame_id = "base"
-    pose_stamped.header.stamp = rospy.Time.now()
-
-    # Create IK request 
-    ik_request = SolvePositionIKRequest()
-    ik_request.pose_stamp.append(pose_stamped)
-
-    # Request service
-    try:
-        rospy.wait_for_service("ExternalTools/left/PositionKinematicsNode/IKService", 5.0)
-        ik_response = ik_service(ik_request)
-    except (rospy.ServiceException, rospy.ROSException), error_message:
-        rospy.logerr("Service request failed: %r" %(error_message))
-        sys.exit("ERROR - move_to_observe - Failed to append pose")
-    if ik_response.isValid[0]:
-        limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        group.set_joint_value_target(limb_joints)
-        plan2= group.plan()
-        rospy.sleep(5)
-        group.go(wait=True)
-
-
-def move_to_vision():
-    # Set pose
-    pose = Pose()
-    pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
-    pose.position = Point(0.712, 0.316, 0.250)
-
-    # Request service
-    request_pose(pose)
-
-
-def move_to_box():
-    pose = Pose()
-    pose.orientation = Quaternion(0.00, 1.0, 0.00, 0.00)
-    pose.position = Point(0.737, -0.114, 0.283)
-    request_pose(pose)
-
-
-def pick_and_place(xposl, yposl, zposl):
-    pose = Pose()
-    pose.position = Point(xposl, yposl, 0.250)
-    pose.orientation = Quaternion(0.00, 1.00, 0.00, 0.00)
-
-    request_pose(pose)
+    #Close Baxter's left gripper
     left_gripper.close()
-    move_to_box()
+    rospy.sleep(2)
+
+    print "============ Generating waypoint plan"
+    pose_target.orientation.x = 1
+    pose_target.position.x = 0.7
+    pose_target.position.y = 0.4
+    pose_target.position.z = 0.3
+    group.set_pose_target(pose_target)
+    plan2 = group.plan()
+    group.go(wait=True)
+    rospy.sleep(2)
+
+
+    print "============ Generating block placement plan"
+    pose_target.orientation.x = 1
+    pose_target.position.x = 0.83
+    pose_target.position.y = 0.1
+    pose_target.position.z = zpos_down 
+    group.set_pose_target(pose_target)
+    plan3 = group.plan()
+    group.go(wait=True)
+    rospy.sleep(2)
+
+
+    #Close Baxter's left gripper
     left_gripper.open()
-    move_to_vision()
-    sleep_flag = True
+    rospy.sleep(2)
 
 
-def read_pos(msg):
+    #Waypoint to vision place
+    print "============ Generating return plan"
+    pose_target.orientation.x = 1
+    pose_target.position.x = 0.85
+    pose_target.position.y = 0.1
+    pose_target.position.z = 0.1
+    group.set_pose_target(pose_target)
+    plan4 = group.plan()
+    group.go(wait=True)
+    rospy.sleep(2)
 
-    global xpos, ypos, zpos
+    #moving back to vision place
+    print "============ Back to Vision Position"
+    pose_target.orientation.x = 1
+    pose_target.position.x = 0.7
+    pose_target.position.y = 0.5
+    pose_target.position.z = 0.3
+    group.set_pose_target(pose_target)
+    plan5 = group.plan()
+    group.go(wait=True)
+    rospy.sleep(2)
+
+
+def read_pos(Point):
+    # print "in read_pos"
+    global xpos_up, ypos_up
+    xpos_up = Point.x
+    ypos_up = Point.y
+
+
+def block_counter(count):
+    print "In block_counter"
+    global block1_flag, block2_flag, block3_flag
+    block1_flag = False
+    block2_flag = False
+    block3_flag = False
+    
+    if count == 1:
+        print "Setting block1_flag"
+        block1_flag = True
+    elif count == 2:
+        print "Setting block2_flag"
+        block2_flag = True
+    elif count == 3:
+        print "Setting block3_flag"
+        block3_flag = True
+
+
+def checkButton(msg):
     global sleep_flag
-
-    if sleep_flag == True:  
-        xpos = msg.x
-        ypos = msg.y
-        zpos = msg.z
-        print "Using these values"
-        print msg
+    sleep_flag = True
+    if msg.state == True:
         sleep_flag = False
 
+
 def main():
-    rospy.init_node('baxter_mover_node')
+    rospy.init_node('move_block')
 
-    print "Initializing all MoveIt related functions"
-    init()
+    print "===========Initializing MoveIt Commander"
+    InitializeMoveItCommander()
 
-    print "Subscribing to center_of_object topic to receive points"
+    #check for cuff button press
+    rospy.Subscriber("/robot/digital_io/left_lower_button/state", DigitalIOState, checkButton)
+
+    #finds postion of green objects
     rospy.Subscriber("/opencv/center_of_object", Point, read_pos)
-    rospy.sleep(1)
+    rospy.sleep(0.05)
    
     count = 1
-    
     while not rospy.is_shutdown():
+
+
+        block_counter(count)
+        rospy.sleep(1)
+
+        global block1_flag, block2_flag, block3_flag
+        if block1_flag == True:
+            zpos_up = 0.02
+            zpos_down = -0.06
+
+        if block2_flag == True:
+            zpos_up = -0.02
+            zpos_down = -0.02
+        
+        if block3_flag == True:
+            zpos_up = -0.06
+            zpos_down = 0.02
+
+        print xpos_up, ypos_up, zpos_up, zpos_down
+        
+        move_block(xpos_up, ypos_up, zpos_up, zpos_down)
+
+        count = count +1
+
         global sleep_flag
-        while sleep_flag:
-            pass
-
-        pick_and_place(xpos, ypos, zpos)
-
         sleep_flag = True
+
+        if count > 3:
+            #time to reset blocks
+            print "==========Sleeping"
+
+            while sleep_flag:
+                pass
+            
+            count = 1
 
 
 if __name__ == '__main__':
     main()
+
