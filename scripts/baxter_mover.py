@@ -146,14 +146,14 @@ def main():
     init()
     print "Move to Vision Pose"
     move_to_vision()
-    global objec_location_calc
-    objec_location_calc = True
+    global object_location_calc
+    object_location_calc = True
     while not rospy.is_shutdown():
         try:
             print "Waiting for Object Location Service"
             rospy.wait_for_service('object_location_service')
             print "Done Waiting for Object Location Service"
-            response = obj_loc_service(objec_location_calc)
+            response = obj_loc_service.call(ObjLocationRequest(object_location_calc))
             if response.objFound == True:
                 move_to_object(response.x, response.y, response.z, response.zready)
                 if response.zready == True:
