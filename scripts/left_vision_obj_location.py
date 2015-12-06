@@ -6,13 +6,10 @@ import rospy
 import numpy as np
 import cv2
 import baxter_interface
-
 from std_msgs.msg import String, Int32
 from sensor_msgs.msg import Image
 from geometry_msgs.msg import Point
-
 from cv_bridge import CvBridge, CvBridgeError
-
 from baxter_builder.srv import *
 
 
@@ -44,7 +41,7 @@ obj_found = False
 # global correct_location 
 correct_location = True
 
-#Object centroid position in the baxter's stationary base frame 
+#global object centroid position in the baxter's stationary base frame 
 xb = 0
 yb = 0
 
@@ -52,7 +49,8 @@ yb = 0
 Thresholds camera image and stores object centroid location (x,y) in Baxter's base frame.
 '''
 def callback(message):
-    global xb, yb
+    global xb, yb, obj_found
+    # Reset xb, yb to 0 upon each callback
     xb = 0
     yb = 0
     #Capturing image of camera
@@ -94,12 +92,13 @@ def callback(message):
     numobj = len(contours) # number of objects found in current frame
     #print 'Number of objects found in the current frame: ' , numobj
 
+    #If 1 or more objects detected, spit out the centroid coords for the 1st object detected, in Baxter's frame.
+    #If no object detected, set obj_found flag to False.
     if numobj > 0:
         moms = cv2.moments(contours[0])
         if moms['m00']>500:
             cx = int(moms['m10']/moms['m00'])
-            cy = int(moms['m01']/moms['m00'])
-            
+            cy = int(moms['m01']/moms['m00'])           
             # print 'cx = ', cx
             # print 'cy = ', cy
 
@@ -107,9 +106,17 @@ def callback(message):
             #print "Distance is %f" % dist
             #dist = dist/1000
 
-            #Position in the baxter's stationary base frame
+            #Position in the baxter's stationary base frame:
             xb = (cy - (height/2))*.0023*.433 + .712 + .03
             yb = (cx - (width/2))*.0023*.433 + .316  - .02
+
+            #set the obj_found flag to True
+            obj_found = True
+    else:
+        # print 'No object detected'
+        obj_found = False
+        xb = 0.7
+        yb = 0.3
                 
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
@@ -120,12 +127,12 @@ def callback(message):
 Creates and returns a response with object location info for the object_location_service.
 '''
 def get_obj_location(request):
-    global xb, yb
+    global xb, yb, obj_found
     #print xb, yb
     while xb == 0 and yb == 0:
-        print "Here"
+        print "Waiting for image processing to complete"
 
-    return ObjLocationResponse(xb, yb, 0, True, True)
+    return ObjLocationResponse(xb, yb, 0, obj_found, True)
 
 '''
 Creates a service that provides information about the loaction of an object.

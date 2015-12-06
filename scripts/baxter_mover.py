@@ -1,36 +1,20 @@
 #!/usr/bin/env python
 
-
 import sys
-import copy
+# import copy   ### WHY required?
 import rospy
 import moveit_commander
 import moveit_msgs.msg
-import geometry_msgs.msg 
 import baxter_interface
-from baxter_interface import Gripper
 
-from std_msgs.msg import (Header, String)
-from geometry_msgs.msg import (PoseStamped, Pose, Point, Quaternion)
-from baxter_core_msgs.msg import DigitalIOState
-
+from std_msgs.msg import Header, String
+from geometry_msgs.msg import PoseStamped, Pose, Point, Quaternion
+# from baxter_core_msgs.msg import DigitalIOState
 from moveit_commander import MoveGroupCommander
-
-from std_msgs.msg import Int32
-from geometry_msgs.msg import Pose, PoseStamped
-
-from baxter_core_msgs.srv import ( SolvePositionIK,
-                                   SolvePositionIKRequest )
-
+# from std_msgs.msg import Int32 ### WHY required?
+from baxter_core_msgs.srv import SolvePositionIK, SolvePositionIKRequest
 from baxter_builder.srv import *
 
-sleep_flag = True
-xpos = 0
-ypos = 0
-zpos = 0
-
-global group
-global right_group
 def init():
     #Wake up Baxter
     baxter_interface.RobotEnable().enable()
@@ -128,18 +112,18 @@ def move_to_box():
     request_pose(pose, "left", left_group)
 
 
-def move_to_object(xposl, yposl, zposl, zready = False):
-    pose = Pose()
-    pose.position = Point(xposl, yposl, 0.150)
-    pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+def move_to_object(xposl, yposl, zposl, zready=True):
+    pose1 = Pose()
+    pose1.position = Point(xposl, yposl, 0.150)
+    pose1.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
 
-    request_pose(pose, "left", left_group)
+    request_pose(pose1, "left", left_group)
     rospy.sleep(2)
 
-    poset = Pose()
-    poset.position = Point(xposl, yposl, -0.12)
-    poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
-    request_pose(poset, "left", left_group)
+    pose2 = Pose()
+    pose2.position = Point(xposl, yposl, -0.12)
+    pose2.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+    request_pose(pose2, "left", left_group)
     left_gripper.close()
     move_to_box()
     left_gripper.open()
@@ -147,9 +131,9 @@ def move_to_object(xposl, yposl, zposl, zready = False):
 
 def main():
     rospy.init_node('baxter_mover_node')
-    print "Initializing all MoveIt related functions and services"
+    print "Initializing all MoveIt! related functions and services"
     init()
-    print "Move to Vision Pose"
+    print "Moving to Vision Pose"
     move_to_vision()
     global object_location_calc
     object_location_calc = True
@@ -163,6 +147,7 @@ def main():
                 move_to_vision()
             else:
                 #Move to random pose
+                print 'No object detected'
                 print "Moving to random pose"
         except rospy.ServiceException, e:
             print "Service call failed: %s" % e
