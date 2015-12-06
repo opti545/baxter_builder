@@ -110,6 +110,10 @@ def callback(message):
             xb = (cy - (height/2))*.0023*.433 + .712 + .03
             yb = (cx - (width/2))*.0023*.433 + .316  - .02
 
+            rect = cv2.minAreaRect(contours[0]) # rect = ((center_x,center_y),(width,height),angle)
+            ang = rect.angle
+            #angb = ##### HOW TO CONVERT ANGLE IN [-90,0) TO QUATERNIONS? #####
+
             #set the obj_found flag to True
             obj_found = True
     else:
