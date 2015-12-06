@@ -118,7 +118,8 @@ def callback(message):
         xb = 0.7
         yb = 0.3
                 
-    #Printing to screen the images
+    # create display_msg and also output images to computer
+    global display_msg = CvBridge().cv2_to_imgmsg(cv_image, encoding="bgr8")
     cv2.imshow("Original", cv_image)
     cv2.imshow("Thresholded", thresholded)
     cv2.waitKey(3)
@@ -143,12 +144,19 @@ def main():
     #Initiate left hand camera object detection node
     rospy.init_node('left_camera_node')
 
+    #Create image publisher to head monitor
+    display_pub = rospy.Publisher('/robot/xdisplay', Image, latch=True)
+
     #Create names for OpenCV images and orient them appropriately
     cv2.namedWindow("Original", 1)
     cv2.namedWindow("Thresholded", 2)
 
     #Subscribe to left hand camera image 
     rospy.Subscriber("/cameras/left_hand_camera/image", Image, callback)
+
+    #Publish cv_image to head display
+    rospy.sleep(2)
+    display_pub.publish(display_msg)
 
     #Declare object location service called object_location_srv with ObjLocation service type.
     #All requests are passed to get_obj_location function
