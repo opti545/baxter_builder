@@ -22,7 +22,6 @@ find_package(catkin REQUIRED COMPONENTS
 add_service_files(
     FILES
     ObjLocation.srv
-    Ready.srv
 )
 
 generate_messages(DEPENDENCIES std_msgs)
