@@ -108,7 +108,7 @@ def request_pose(pose, arm, groupl):
         groupl.set_joint_value_target(limb_joints)
         plan2= groupl.plan(limb_joints)
         rospy.sleep(3)
-        groupl.go(wait=True)
+        groupl.execute(plan2)
 
 
 def move_to_vision():
@@ -138,7 +138,7 @@ def move_to_box_blue():
     #For Blue
     pose = Pose()
     pose.orientation = Quaternion(1.00, 0.0, 0.0, 0.0)
-    pose.position = Point(0.602, 0.745, 0.143)
+    pose.position = Point(0.551, 0.776, 0.237)
     request_pose(pose, "left", left_group)
 
 
