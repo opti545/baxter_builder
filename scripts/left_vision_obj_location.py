@@ -186,14 +186,7 @@ def get_obj_location(request):
     global xb, yb, obj_color, correct_location, obj_found 
     zb = 0
     while xb == 0 and yb == 0:
-        print "Waiting for object location..."
-
-    print "Object found =  ", obj_found
-    print "xb = ", xb
-    print "yb = ", yb
-    print "Object color = ", obj_color
-    print "Correct location = ", correct_location
-
+        rospy.sleep(1)
     return ObjLocationResponse(xb, yb, zb, correct_location, obj_found, obj_color)
 
 '''
