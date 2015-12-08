@@ -15,7 +15,7 @@ from cv_bridge import CvBridge, CvBridgeError
 
 from baxter_builder.srv import *
 
-
+'''
 #green
 low_h  = 60
 high_h = 90
@@ -23,7 +23,8 @@ low_s  = 85
 high_s = 175
 low_v  = 70
 high_v = 255
-'''
+
+
 #white
 low_h=0
 high_h=0
@@ -31,6 +32,7 @@ low_s=0
 high_s=0
 low_v=0
 high_v=255
+'''
 #blue
 low_h  = 105
 high_h = 115
@@ -38,7 +40,7 @@ low_s  = 135
 high_s = 160
 low_v  = 20
 high_v = 60
-'''
+
 # global obj_found
 obj_found = False
 # global correct_location 
@@ -108,8 +110,8 @@ def callback(message):
             #dist = dist/1000
 
             #Position in the baxter's stationary base frame
-            xb = (cy - (height/2))*.0023*.433 + .712 + .03
-            yb = (cx - (width/2))*.0023*.433 + .316  - .02
+            xb = (cy - (height/2))*.0023*.433 + .712 + .02
+            yb = (cx - (width/2))*.0023*.433 + .316  - .021
                 
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
@@ -123,7 +125,7 @@ def get_obj_location(request):
     global xb, yb
     #print xb, yb
     while xb == 0 and yb == 0:
-        print "Here"
+        print "Waiting for object location."
 
     return ObjLocationResponse(xb, yb, 0, True, True)
 

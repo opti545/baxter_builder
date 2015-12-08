@@ -137,7 +137,7 @@ def move_to_object(xposl, yposl, zposl, zready = False):
     rospy.sleep(2)
 
     poset = Pose()
-    poset.position = Point(xposl, yposl, -0.12)
+    poset.position = Point(xposl, yposl, -0.13)
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
     left_gripper.close()
