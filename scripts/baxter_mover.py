@@ -149,7 +149,7 @@ def move_to_box(objcolorl):
 def move_to_object(xposl, yposl, zposl, objcolorl):
     global grip_force
     pose = Pose()
-    pose.position = Point(xposl, yposl, 0.0)
+    pose.position = Point(xposl, yposl-0.01, 0.0)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
 
 
@@ -165,13 +165,13 @@ def move_to_object(xposl, yposl, zposl, objcolorl):
     else:
         print "DISTANCE %f" % dist
         truez = dist/1000
-        truez = truez - 0.07
+        truez = truez - 0.06
         truez = - (truez)
         print truez
 
 
     poset = Pose()
-    poset.position = Point(xposl, yposl, truez)
+    poset.position = Point(xposl, yposl+0.01, truez)
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
 

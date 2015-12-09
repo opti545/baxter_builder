@@ -5,6 +5,7 @@
 import rospy
 import numpy as np
 import cv2
+import cv_bridge
 import baxter_interface
 
 from std_msgs.msg import String, Int32
@@ -51,6 +52,7 @@ obj_color = 0
 #Object centroid position in the baxter's stationary base frame 
 xb = 0
 yb = 0
+
 
 '''
 Thresholds camera image and stores object centroid location (x,y) in Baxter's base frame.
@@ -128,7 +130,7 @@ def callback(message):
 
                 #Position in the baxter's stationary base frame
                 xb = (cy - (height/2))*.0023*.433 + .712 + .02
-                yb = (cx - (width/2))*.0023*.433 + .316  - .022
+                yb = (cx - (width/2))*.0023*.433 + .316  - .02
             #print "Found green ", numobj,  "object(s)"
             obj_found = True
         else:
@@ -137,7 +139,7 @@ def callback(message):
             low_h  = 0
             high_h = 4
             low_s  = 135
-            high_s = 245
+            high_s = 200
             low_v  = 60
             high_v = 255
 
@@ -168,12 +170,17 @@ def callback(message):
 
                     #Position in the baxter's stationary base frame
                     xb = (cy - (height/2))*.0023*.433 + .712 + .02
-                    yb = (cx - (width/2))*.0023*.433 + .316  - .021
+                    yb = (cx - (width/2))*.0023*.433 + .316  - .02
                 #print "Found blue ", numobj,  "object(s)" 
                 obj_found = True
     else:
         print "Couldn't find any green or blue objects."
-                
+     
+    #baxter_image = cv_bridge.CvBridge().cv2_to_imgmsg(cv_image, encoding="bgr8")
+    #pub.publish(baxter_image)
+    # Sleep to allow for image to be published.
+    #rospy.sleep(1)
+
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
     cv2.imshow("Thresholded", thresholded)
@@ -208,6 +215,10 @@ def main():
     #Declare object location service called object_location_srv with ObjLocation service type.
     #All requests are passed to get_obj_location function
     obj_location_srv = rospy.Service("object_location_service", ObjLocation, get_obj_location)
+
+    global pub
+    pub = rospy.Publisher('/robot/xdisplay', Image, latch=True)
+
 
     # print "Left - Ready to find object."
 
