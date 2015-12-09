@@ -128,7 +128,7 @@ def callback(message):
 
                 #Position in the baxter's stationary base frame
                 xb = (cy - (height/2))*.0023*.433 + .712 + .02
-                yb = (cx - (width/2))*.0023*.433 + .316  - .021
+                yb = (cx - (width/2))*.0023*.433 + .316  - .022
             #print "Found green ", numobj,  "object(s)"
             obj_found = True
         else:
@@ -187,7 +187,7 @@ def get_obj_location(request):
     zb = 0
     while xb == 0 and yb == 0:
         rospy.sleep(1)
-    return ObjLocationResponse(xb, yb, zb, correct_location, obj_found, obj_color)
+    return ObjLocationResponse(xb, yb, zb, obj_found, obj_color)
 
 '''
 Creates a service that provides information about the loaction of an object.
