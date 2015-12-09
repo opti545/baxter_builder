@@ -149,16 +149,32 @@ def move_to_box(objcolorl):
 def move_to_object(xposl, yposl, zposl, objcolorl):
     global grip_force
     pose = Pose()
-    pose.position = Point(xposl, yposl, 0.150)
+    pose.position = Point(xposl, yposl, 0.0)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+
 
     request_pose(pose, "left", left_group)
     rospy.sleep(1)
 
+    # Get left hand range state
+    dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
+    rospy.sleep(1)
+    if dist > 65000:
+        print "Out of Range"
+        truez = -0.13
+    else:
+        print "DISTANCE %f" % dist
+        truez = dist/1000
+        truez = truez - 0.07
+        truez = - (truez)
+        print truez
+
+
     poset = Pose()
-    poset.position = Point(xposl, yposl, -0.13)
+    poset.position = Point(xposl, yposl, truez)
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
+
     left_gripper.close()
     rospy.sleep(1)
     if grip_force == 0:
