@@ -17,34 +17,36 @@ from baxter_builder.srv import *
 
 '''
 #green
-low_h  = 60
-high_h = 90
-low_s  = 85
-high_s = 175
-low_v  = 70
-high_v = 255
-
+g_low_h  = 60
+g_high_h = 90
+g_low_s  = 85
+g_high_s = 175
+g_low_v  = 70
+g_high_v = 255
 
 #white
-low_h=0
-high_h=0
-low_s=0
-high_s=0
-low_v=0
-high_v=255
-'''
+w_low_h=0
+w_high_h=0
+w_low_s=0
+w_high_s=0
+w_low_v=0
+w_high_v=255
+
 #blue
-low_h  = 105
-high_h = 115
-low_s  = 135
-high_s = 160
-low_v  = 20
-high_v = 60
+b_low_h  = 105
+b_high_h = 115
+b_low_s  = 135
+b_high_s = 160
+b_low_v  = 20
+b_high_v = 60
+'''
 
 # global obj_found
 obj_found = False
 # global correct_location 
 correct_location = True
+#Object color: 0 = green, 1 = blue
+obj_color = 0
 
 #Object centroid position in the baxter's stationary base frame 
 xb = 0
@@ -54,7 +56,8 @@ yb = 0
 Thresholds camera image and stores object centroid location (x,y) in Baxter's base frame.
 '''
 def callback(message):
-    global xb, yb
+
+    global xb, yb, obj_color, obj_found
     xb = 0
     yb = 0
     #Capturing image of camera
@@ -67,51 +70,109 @@ def callback(message):
     #Converting image to HSV format
     hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 
-    thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
+    thresholded = 0
 
-    #Morphological opening (remove small objects from the foreground)
-    thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
-    thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    obj_color = 0
 
-    #Morphological closing (fill small holes in the foreground)
-    thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
-    thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+    #Green colored objects
+    if obj_color == 0: 
+        # Analyze image for green objects
+        low_h  = 60
+        high_h = 90
+        low_s  = 85
+        high_s = 175
+        low_v  = 70
+        high_v = 255
 
-    ##Finding center of object
-    #cv2.threshold(source image in greyscale, threshold value which is used to classify the pixel values, the maxVal which represents the value to be given if pixel value is more than (sometimes less than) the threshold value )
-    #output: retval and thresholded image
-    ret,thresh = cv2.threshold(thresholded,157,255,0)
+        thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
 
-    #findCountours(source image, contour retrieval mode, contour approximation method )
-    #contours is a Python list of all the contours in the image. Array of arrays.
-    #Each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object.
-    #hierarchy is holding information on the nesting of contours
-    contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
-    #can also use cv2.CHAIN_APPROX_SIMPLE that removes all redundant points and compresses the contour, thereby saving memory.
+        #Morphological opening (remove small objects from the foreground)
+        thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+        thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
 
-    #Draw the countours. 
-    #drawCountours(source image, contours as a Python list, index of contours (useful when drawing individual contour. To draw all contours, pass -1),color, thickness)
-    cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
+        #Morphological closing (fill small holes in the foreground)
+        thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+        thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
 
-    numobj = len(contours) # number of objects found in current frame
-    #print 'Number of objects found in the current frame: ' , numobj
+        ##Finding center of object
+        #cv2.threshold(source image in greyscale, threshold value which is used to classify the pixel values, the maxVal which represents the value to be given if pixel value is more than (sometimes less than) the threshold value )
+        #output: retval and thresholded image
+        ret,thresh = cv2.threshold(thresholded,157,255,0)
 
-    if numobj > 0:
-        moms = cv2.moments(contours[0])
-        if moms['m00']>500:
-            cx = int(moms['m10']/moms['m00'])
-            cy = int(moms['m01']/moms['m00'])
-            
-            # print 'cx = ', cx
-            # print 'cy = ', cy
+        #findCountours(source image, contour retrieval mode, contour approximation method )
+        #contours is a Python list of all the contours in the image. Array of arrays.
+        #Each individual contour is a Numpy array of (x,y) coordinates of boundary points of the object.
+        #hierarchy is holding information on the nesting of contours
+        contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+        #can also use cv2.CHAIN_APPROX_SIMPLE that removes all redundant points and compresses the contour, thereby saving memory.
 
-            #dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
-            #print "Distance is %f" % dist
-            #dist = dist/1000
+        #Draw the countours. 
+        #drawCountours(source image, contours as a Python list, index of contours (useful when drawing individual contour. To draw all contours, pass -1),color, thickness)
+        cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
 
-            #Position in the baxter's stationary base frame
-            xb = (cy - (height/2))*.0023*.433 + .712 + .02
-            yb = (cx - (width/2))*.0023*.433 + .316  - .021
+        numobj = len(contours) # number of objects found in current frame
+        #print 'Number of objects found in the current frame: ' , numobj
+
+        if numobj > 0:
+            moms = cv2.moments(contours[0])
+            if moms['m00']>500:
+                cx = int(moms['m10']/moms['m00'])
+                cy = int(moms['m01']/moms['m00'])
+                
+                # print 'cx = ', cx
+                # print 'cy = ', cy
+
+                #dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
+                #print "Distance is %f" % dist
+                #dist = dist/1000
+
+                #Position in the baxter's stationary base frame
+                xb = (cy - (height/2))*.0023*.433 + .712 + .02
+                yb = (cx - (width/2))*.0023*.433 + .316  - .021
+            #print "Found green ", numobj,  "object(s)"
+            obj_found = True
+        else:
+            obj_color = 1 #No green objects were found so switch to red
+            # Analyze image for blue objects
+            low_h  = 0
+            high_h = 4
+            low_s  = 135
+            high_s = 245
+            low_v  = 60
+            high_v = 255
+
+            thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
+
+            #Morphological opening (remove small objects from the foreground)
+            thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+            thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+
+            #Morphological closing (fill small holes in the foreground)
+            thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+            thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+
+            ret,thresh = cv2.threshold(thresholded,157,255,0)
+
+            contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+        
+            cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
+
+            numobj = len(contours) # number of objects found in current frame
+            #print 'Number of objects found in the current frame: ' , numobj
+
+            if numobj > 0:
+                moms = cv2.moments(contours[0])
+                if moms['m00']>500:
+                    cx = int(moms['m10']/moms['m00'])
+                    cy = int(moms['m01']/moms['m00'])
+
+                    #Position in the baxter's stationary base frame
+                    xb = (cy - (height/2))*.0023*.433 + .712 + .02
+                    yb = (cx - (width/2))*.0023*.433 + .316  - .021
+                #print "Found blue ", numobj,  "object(s)" 
+                obj_found = True
+    else:
+        print "Couldn't find any green or blue objects."
                 
     #Printing to screen the images
     cv2.imshow("Original", cv_image)
@@ -122,12 +183,18 @@ def callback(message):
 Creates and returns a response with object location info for the object_location_service.
 '''
 def get_obj_location(request):
-    global xb, yb
-    #print xb, yb
+    global xb, yb, obj_color, correct_location, obj_found 
+    zb = 0
     while xb == 0 and yb == 0:
-        print "Waiting for object location."
+        print "Waiting for object location..."
 
-    return ObjLocationResponse(xb, yb, 0, True, True)
+    print "Object found =  ", obj_found
+    print "xb = ", xb
+    print "yb = ", yb
+    print "Object color = ", obj_color
+    print "Correct location = ", correct_location
+
+    return ObjLocationResponse(xb, yb, zb, correct_location, obj_found, obj_color)
 
 '''
 Creates a service that provides information about the loaction of an object.

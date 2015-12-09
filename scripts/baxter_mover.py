@@ -121,14 +121,21 @@ def move_to_vision():
     request_pose(pose,"left", left_group)
 
 
-def move_to_box():
-    pose = Pose()
-    pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
-    pose.position = Point(0.737, -0.114, 0.283)
+def move_to_box(objcolorl):
+    if objcolorl == 0:
+        #move to green box
+        pose = Pose()
+        pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+        pose.position = Point(0.737, -0.114, 0.283)
+    else:
+        #move to blue box
+        pose = Pose()
+        pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+        pose.position = Point(0.551, 0.776, 0.237)
     request_pose(pose, "left", left_group)
 
 
-def move_to_object(xposl, yposl, zposl, zready = False):
+def move_to_object(xposl, yposl, zposl, objcolorl):
     pose = Pose()
     pose.position = Point(xposl, yposl, 0.150)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
@@ -141,7 +148,7 @@ def move_to_object(xposl, yposl, zposl, zready = False):
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
     left_gripper.close()
-    move_to_box()
+    move_to_box(objcolorl)
     left_gripper.open()
 
 
@@ -159,7 +166,7 @@ def main():
             response = obj_loc_service.call(ObjLocationRequest(object_location_calc))
             print response
             if response.objfound == True:
-                move_to_object(response.xb, response.yb, response.zb, response.zflag)
+                move_to_object(response.xb, response.yb, response.zb, response.objcolor)
                 move_to_vision()
             else:
                 #Move to random pose

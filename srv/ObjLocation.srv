@@ -5,3 +5,4 @@ float32 yb
 float32 zb
 bool zflag
 bool objfound
+int8 objcolor
