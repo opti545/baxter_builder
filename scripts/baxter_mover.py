@@ -12,7 +12,7 @@ from baxter_interface import Gripper
 
 from std_msgs.msg import (Header, String)
 from geometry_msgs.msg import (PoseStamped, Pose, Point, Quaternion)
-from baxter_core_msgs.msg import DigitalIOState
+from baxter_core_msgs.msg import EndEffectorState
 
 from moveit_commander import MoveGroupCommander
 
@@ -28,6 +28,7 @@ sleep_flag = True
 xpos = 0
 ypos = 0
 zpos = 0
+grip_force = 0
 
 global group
 global right_group
@@ -64,13 +65,15 @@ def init():
     #Activate Left Arm to be used with MoveIt
     global left_group
     left_group = MoveGroupCommander("left_arm")
+    left_group.set_goal_position_tolerance(0.01)
+    left_group.set_goal_orientation_tolerance(0.01)
     
     
     global right_group
     right_group = MoveGroupCommander("right_arm")
     pose_right = Pose()
-    pose_right.position = Point(0.587, -0.579, 0.480)
-    pose_right.orientation = Quaternion(0.029, 0.998, -0.046, 0.015)
+    pose_right.position = Point(0.793, -0.586, 0.329)
+    pose_right.orientation = Quaternion(1.0, 0.0, 0.0, 0.0)
     request_pose(pose_right, "right", right_group)
     
 
@@ -78,6 +81,9 @@ def init():
     left_gripper = baxter_interface.Gripper('left')
     left_gripper.calibrate()
 
+    global end_effector_subs
+    end_effector_subs = rospy.Subscriber("/robot/end_effector/left_gripper/state", EndEffectorState, end_effector_callback)
+    rospy.sleep(1)
 
 def request_pose(pose, arm, groupl):
     # Set stamped pose
@@ -103,13 +109,15 @@ def request_pose(pose, arm, groupl):
         sys.exit("ERROR - move_to_observe - Failed to append pose")
     if ik_response.isValid[0]:
         limb_joints = dict(zip(ik_response.joints[0].name, ik_response.joints[0].position))
-        #groupl.clear_pose_targets()
         groupl.set_start_state_to_current_state()
         groupl.set_joint_value_target(limb_joints)
         plan2= groupl.plan(limb_joints)
-        rospy.sleep(3)
+        rospy.sleep(2)
         groupl.execute(plan2)
+        return True
+    else:
 
+        return False
 
 def move_to_vision():
     # Set pose
@@ -120,44 +128,50 @@ def move_to_vision():
     # Request service
     request_pose(pose,"left", left_group)
 
+def end_effector_callback(msg):
+    global grip_force
+    grip_force = msg.force
 
 def move_to_box(objcolorl):
     if objcolorl == 0:
         #move to green box
         pose = Pose()
         pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
-        pose.position = Point(0.737, -0.114, 0.283)
+        pose.position = Point(0.570, -0.176, 0.283)
     else:
         #move to blue box
         pose = Pose()
         pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
-        pose.position = Point(0.551, 0.776, 0.237)
+        pose.position = Point(0.708, -0.153, 0.258)
     request_pose(pose, "left", left_group)
-
-def move_to_box_blue():
-    #For Blue
-    pose = Pose()
-    pose.orientation = Quaternion(1.00, 0.0, 0.0, 0.0)
-    pose.position = Point(0.551, 0.776, 0.237)
-    request_pose(pose, "left", left_group)
-
 
 
 def move_to_object(xposl, yposl, zposl, objcolorl):
+    global grip_force
     pose = Pose()
     pose.position = Point(xposl, yposl, 0.150)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
 
     request_pose(pose, "left", left_group)
-    rospy.sleep(2)
+    rospy.sleep(1)
 
     poset = Pose()
     poset.position = Point(xposl, yposl, -0.13)
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
     left_gripper.close()
-    move_to_box(objcolorl)
-    left_gripper.open()
+    rospy.sleep(1)
+    if grip_force == 0:
+        left_gripper.open()
+        move_to_vision()
+    else:
+        pose = Pose()
+        pose.position = Point(xposl, yposl, 0.150)
+        pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
+        request_pose(pose, "left", left_group)
+        move_to_box(objcolorl)
+        left_gripper.open()
+        move_to_vision()
 
 
 def main():
@@ -166,16 +180,13 @@ def main():
     init()
     print "Move to Vision Pose"
     move_to_vision()
-    global object_location_calc
-    object_location_calc = True
     while not rospy.is_shutdown():
         try:
             rospy.wait_for_service('object_location_service')
-            response = obj_loc_service.call(ObjLocationRequest(object_location_calc))
+            response = obj_loc_service.call(ObjLocationRequest())
             print response
             if response.objfound == True:
                 move_to_object(response.xb, response.yb, response.zb, response.objcolor)
-                move_to_vision()
             else:
                 #Move to random pose
                 print "Moving to random pose"
