@@ -150,7 +150,7 @@ def move_to_box(objcolorl):
 def move_to_object(xposl, yposl, zposl, objcolorl):
     global grip_force
     pose = Pose()
-    pose.position = Point(xposl, yposl-0.01, 0.0)
+    pose.position = Point(xposl- 0.01, yposl, 0.0)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
 
 
