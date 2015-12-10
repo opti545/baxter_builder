@@ -4,16 +4,20 @@
 import sys
 import copy
 import rospy
+import cv2
+import cv_bridge
 import moveit_commander
 import moveit_msgs.msg
 import geometry_msgs.msg 
 import baxter_interface
 from baxter_interface import Gripper
+import numpy as np
 
 from std_msgs.msg import (Header, String)
 from geometry_msgs.msg import (PoseStamped, Pose, Point, Quaternion)
 from baxter_core_msgs.msg import EndEffectorState
 
+from sensor_msgs.msg import Image
 from moveit_commander import MoveGroupCommander
 
 from std_msgs.msg import Int32
@@ -30,8 +34,6 @@ ypos = 0
 zpos = 0
 grip_force = 0
 
-global group
-global right_group
 def init():
     #Wake up Baxter
     baxter_interface.RobotEnable().enable()
@@ -84,6 +86,10 @@ def init():
 
     global end_effector_subs
     end_effector_subs = rospy.Subscriber("/robot/end_effector/left_gripper/state", EndEffectorState, end_effector_callback)
+    rospy.sleep(1)
+
+    global pubpic
+    pubpic = rospy.Publisher('/robot/xdisplay', Image, latch=True, queue_size=1)
     rospy.sleep(1)
 
 def request_pose(pose, arm, groupl):
@@ -139,11 +145,20 @@ def move_to_box(objcolorl):
         pose = Pose()
         pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
         pose.position = Point(0.570, -0.176, 0.283)
+        path = '/home/josmiranda/bt_ws/src/baxter_builder/images/green_success.png' 
+        img = cv2.imread(path)
+
+        msg = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+        pubpic.publish(msg)
     else:
         #move to blue box
         pose = Pose()
         pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
         pose.position = Point(0.708, -0.153, 0.258)
+        path = '/home/josmiranda/bt_ws/src/baxter_builder/images/red_success.png' 
+        img = cv2.imread(path)
+        msg = cv_bridge.CvBridge().cv2_to_imgmsg(img, encoding="bgr8")
+        pubpic.publish(msg)
     request_pose(pose, "left", left_group)
 
 
