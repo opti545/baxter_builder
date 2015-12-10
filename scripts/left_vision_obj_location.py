@@ -135,11 +135,11 @@ def callback(message):
             obj_found = True
         else:
             obj_color = 1 #No green objects were found so switch to red
-            # Analyze image for blue objects
+            # Analyze image for red objects
             low_h  = 0
             high_h = 4
             low_s  = 135
-            high_s = 200
+            high_s = 175
             low_v  = 60
             high_v = 255
 
@@ -216,8 +216,7 @@ def main():
     #All requests are passed to get_obj_location function
     obj_location_srv = rospy.Service("object_location_service", ObjLocation, get_obj_location)
 
-    global pub
-    pub = rospy.Publisher('/robot/xdisplay', Image, latch=True)
+    
 
 
     # print "Left - Ready to find object."

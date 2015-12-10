@@ -80,6 +80,7 @@ def init():
     global left_gripper
     left_gripper = baxter_interface.Gripper('left')
     left_gripper.calibrate()
+    print left_gripper.parameters()
 
     global end_effector_subs
     end_effector_subs = rospy.Subscriber("/robot/end_effector/left_gripper/state", EndEffectorState, end_effector_callback)
@@ -112,11 +113,11 @@ def request_pose(pose, arm, groupl):
         groupl.set_start_state_to_current_state()
         groupl.set_joint_value_target(limb_joints)
         plan2= groupl.plan(limb_joints)
-        rospy.sleep(2)
+        rospy.sleep(1.5)
         groupl.execute(plan2)
+        rospy.sleep(0.25)
         return True
     else:
-
         return False
 
 def move_to_vision():
@@ -154,7 +155,7 @@ def move_to_object(xposl, yposl, zposl, objcolorl):
 
 
     request_pose(pose, "left", left_group)
-    rospy.sleep(1)
+    rospy.sleep(0.5)
 
     # Get left hand range state
     dist = baxter_interface.analog_io.AnalogIO('left_hand_range').state()
@@ -176,7 +177,7 @@ def move_to_object(xposl, yposl, zposl, objcolorl):
     request_pose(poset, "left", left_group)
 
     left_gripper.close()
-    rospy.sleep(1)
+    rospy.sleep(0.5)
     if grip_force == 0:
         left_gripper.open()
         move_to_vision()
