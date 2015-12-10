@@ -137,11 +137,11 @@ def callback(message):
             obj_color = 1 #No green objects were found so switch to red
             # Analyze image for red objects
             low_h  = 0
-            high_h = 4
-            low_s  = 135
-            high_s = 175
-            low_v  = 60
-            high_v = 255
+            high_h = 3
+            low_s  = 130
+            high_s = 190
+            low_v  = 80
+            high_v = 250
 
             thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
 

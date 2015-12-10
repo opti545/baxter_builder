@@ -165,7 +165,7 @@ def move_to_box(objcolorl):
 def move_to_object(xposl, yposl, zposl, objcolorl):
     global grip_force
     pose = Pose()
-    pose.position = Point(xposl, yposl-0.01, 0.0)
+    pose.position = Point(xposl-0.01, yposl, 0.00)
     pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
 
 
@@ -187,7 +187,7 @@ def move_to_object(xposl, yposl, zposl, objcolorl):
 
 
     poset = Pose()
-    poset.position = Point(xposl, yposl+0.01, truez)
+    poset.position = Point(xposl, yposl, truez)
     poset.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
     request_pose(poset, "left", left_group)
 
@@ -198,9 +198,13 @@ def move_to_object(xposl, yposl, zposl, objcolorl):
         move_to_vision()
     else:
         pose = Pose()
-        pose.position = Point(xposl, yposl, 0.150)
+        pose.position = Point(xposl-0.01, yposl+0.01, 0.150)
         pose.orientation = Quaternion(1.00, 0.0, 0.00, 0.00)
         request_pose(pose, "left", left_group)
+        if grip_force == 0:
+            left_gripper.open()
+            move_to_vision()
+            return
         move_to_box(objcolorl)
         left_gripper.open()
         move_to_vision()
@@ -212,6 +216,7 @@ def main():
     init()
     print "Move to Vision Pose"
     move_to_vision()
+    rospy.sleep(15)
     while not rospy.is_shutdown():
         try:
             rospy.wait_for_service('object_location_service')
