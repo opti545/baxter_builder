@@ -7,27 +7,32 @@ Instructor:  Jarvis Schultz
 Team members: Jose Miranda, Sofya Akhmametyeva, Yves Nazon and Tanay Choudhary
 
 ### Table of contents
+[Overview](#Overview)
+[Required tools and set up](#Required tools and set up)
+[left_camera_node](#left_camera_node)
+[move_arm_node](#move_arm_node)
+[Gazebo world](#Gazebo world)
+[Launch file](#Launch file)
 
-[TOC]
-
-
+<a name="Overview"></a> 
 Overview
 -------------
 
 The goal of the project was to have Baxter detect objects via left hand camera and sort them into two boxes based on green and red colors. MoveIt! package and IK Service were leveraged for the movement and path planning. Open CV library was used for the image processing and object detection.
 
 Please click on the following image to watch the demo!
-[![Screenshot](http://www.pullmanacademic.com.au/images/Robotics/Baxter_1_Large.jpg)](https://www.youtube.com/watch?v=7gfVH0BbgBk)
+[![Screenshot](https://raw.githubusercontent.com/opti545/baxter_builder/perception_branch/pictures/baxter_builder.PNG)](https://www.youtube.com/watch?v=7gfVH0BbgBk)
 
 ----------
 
+<a name="Required tools and set up"></a> 
 Required tools and set up
 -------------
 - Baxter Robot 
 - [ROS Indigo](http://wiki.ros.org/ROS/Installation) for Ubuntu 14.04 
 - Baxter packages
 - ROS Environment variables must be set properly in order to be able to connect and interface with baxter. It can be useful to add the following lines of code into your .bashrc:
->**ROS Environment Variables**
+
 ```
 #for baxter simulation
 alias bxl="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP=127.0.0.1; export ROS_MASTER_URI=http://localhost:11311"
@@ -36,8 +41,7 @@ alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 ```
 
 
-
-
+<a name="">left_camera_node</a> 
 left_camera_node
 -------------
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
@@ -56,7 +60,6 @@ thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h
 #Morphological opening (remove small objects from the foreground)
 thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
 thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
-
 #Morphological closing (fill small holes in the foreground)
 thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
 thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
@@ -123,6 +126,8 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 > This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
 -----
+
+<a name="">move_arm_node</a> 
 move_arm_node
 -------------
 
@@ -192,12 +197,12 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 >```/robot/xdisplay```
 > - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
-
+<a name="">Gazebo world</a> 
 Gazebo world
 -------------
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
 
-
+<a name="">Launch file</a> 
 Launch file 
 -------------
 In order to run the project, type the following:
