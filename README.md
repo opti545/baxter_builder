@@ -132,7 +132,7 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
   /cameras/left_hand_camera/image
   ```
 
-  This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
+  This camera image is later processed using Open CV libraries, as described above, in order to extract a centroid location of a desired object.
 
 -----
 
@@ -142,13 +142,13 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
 
 All related Baxter movements and inverse kinematics calculations were done in the **move_arm_node**. There are various packages and services that we used for the movement. They are as follow:
 
->***MoveIt!***
+***MoveIt!***
 
-  > We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
+  We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
 
 ```left_group = MoveGroupCommander("left_arm")```
 
-  > This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  
+  This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  
 ```
       plan2= left_group.plan(limb_joints)
           rospy.sleep(1.5)
@@ -156,12 +156,12 @@ All related Baxter movements and inverse kinematics calculations were done in th
           rospy.sleep(0.25)
   ``` 
 
-  > In addition, we were able to use one of the recent released packages for Inverse Kinematics called [trac_ik](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html).  The reason for using this package was to allow better planning calculations with MoveIt! since we used it as the IK solver for the **moveit_commander** interface instead of its default IK solver plugin. More information in installing the package can be found in [here](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html). 
+  In addition, we were able to use one of the recent released packages for Inverse Kinematics called [trac_ik](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html).  The reason for using this package was to allow better planning calculations with MoveIt! since we used it as the IK solver for the **moveit_commander** interface instead of its default IK solver plugin. More information in installing the package can be found in [here](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html). 
 
 --- 
 
->***IK Service***
-  > As part of our inverse kinematics calculations, we used a service provided by ROS that allowed us to compute the joint values for a specific target pose. This was used in conjunction with MoveIt! to allow us to get better accuracy for the arm to reach the specified pose.  
+***IK Service***
+  As part of our inverse kinematics calculations, we used a service provided by ROS that allowed us to compute the joint values for a specific target pose. This was used in conjunction with MoveIt! to allow us to get better accuracy for the arm to reach the specified pose.  
   A sample code taken from our ***move_arm_node*** can be seen so it can be easier to see how we use these services:
 
 ```
@@ -200,24 +200,24 @@ All related Baxter movements and inverse kinematics calculations were done in th
         return False
 ```
 ---
-> ***Object Location Service Client***
-  > WIthin our framework, we used the Service Server/Client infrastructure to get target poses of our objects to pick up. The ***move_arm_node*** was the client requesting a location of objects through an empty message request. The response that the node gets contains information about whether a green/red object was found in the current field of vision, the color and the (x,y,z) location of the object.
+***Object Location Service Client***
+  Within our framework, we used the Service Server/Client infrastructure to get target poses of our objects to pick up. The ***move_arm_node*** was the client requesting a location of objects through an empty message request. The response that the node gets contains information about whether a green/red object was found in the current field of vision, the color and the (x,y,z) location of the object.
 
 
 ---
-> ***Topics Subscribed*** 
-  > Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
+***Topics Subscribed*** 
+  Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
 
   ``` /robot/end_effector/left_gripper/state```
 
-  > The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
+  The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
 
   ```/robot/xdisplay```
 
-  > This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
+  This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
----
 ----------
+
 
 <a name="">Gazebo world</a> 
 -------------
