@@ -4,6 +4,7 @@ Welcome to the Baxter Builder Project!
 Northwestern University
 ME495: Embedded Systems in Robotics (Fall 2015)
 Instructor:  Jarvis Schultz 
+
 Team members: Jose Miranda, Sofya Akhmametyeva, Yves Nazon and Tanay Choudhary
 
 ### Table of contents
@@ -15,7 +16,6 @@ Team members: Jose Miranda, Sofya Akhmametyeva, Yves Nazon and Tanay Choudhary
 - [Launch file](#Launch file)
 
 <a name="Overview"></a> 
-Overview
 -------------
 
 The goal of the project was to have Baxter detect objects via left hand camera and sort them into two boxes based on green and red colors. MoveIt! package and IK Service were leveraged for the movement and path planning. Open CV library was used for the image processing and object detection.
@@ -30,7 +30,7 @@ Required tools and set up
 -------------
 - Baxter Robot 
 - [ROS Indigo](http://wiki.ros.org/ROS/Installation) for Ubuntu 14.04 
-- Baxter packages
+- [Baxter Setup](http://sdk.rethinkrobotics.com/wiki/Baxter_Setup)
 - ROS Environment variables must be set properly in order to be able to connect and interface with baxter. It can be useful to add the following lines of code into your .bashrc:
 
 ```
@@ -39,21 +39,24 @@ alias bxl="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 #for actual baxter
 alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP=10.42.0.1; export ROS_MASTER_URI=http://baxter.local:11311"
 ```
-
+------------
 
 <a name="">left_camera_node</a> 
 -------------
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
 
->**Open CV**
+>***Open CV***
   >We used **cv2** package for image processing, as well as **CvBridge** in order to be able to interface with ROS and Baxter. The left hand camera image was captured, converted to cv2 image and then converted to HSV format as follows:
+
 ```
 bridge = CvBridge()
 cv_image = bridge.imgmsg_to_cv2(message, "bgr8")
 #Converting image to HSV format
 hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
 ```
+
 Later the cv_image was thresholded with green and red color HSV ranges in order to pick out the desired objects. Here is a quick example: 
+
 ```
 thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
 #Morphological opening (remove small objects from the foreground)
@@ -67,6 +70,7 @@ thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
 ret,thresh = cv2.threshold(thresholded,157,255,0)
 ``` 
 Contours of the objects were found and used for the calculation of the centroid of each object. They were also drawn on top of the original image for a nice visual:
+
 ```
 contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
 cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
@@ -81,8 +85,9 @@ if numobj > 0:
 
 
 ---
->**Object position calculation**
-  >Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
+>***Object position calculation***
+  > Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
+
 ```
 #Position of the object in the baxter's moving camera frame 
 cx = centres[0][0]
@@ -117,33 +122,38 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 ----
 > ***Topics Subscribed*** 
 > The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
->``` /cameras/left_hand_camera/image```
+``` /cameras/left_hand_camera/image```
+
 > This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
 -----
 
 <a name="">move_arm_node</a> 
-move_arm_node
 -------------
 
 All related Baxter movements and inverse kinematics calculations were done in the **move_arm_node**. There are various packages and services that we used for the movement. They are as follow:
 
->**MoveIt!**
+>***MoveIt!***
   >We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
+
 ```left_group = MoveGroupCommander("left_arm")```
-This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  ```
+
+This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  
+```
       plan2= left_group.plan(limb_joints)
           rospy.sleep(1.5)
           left_group.execute(plan2)
           rospy.sleep(0.25)
   ``` 
+
   In addition, we were able to use one of the recent released packages for Inverse Kinematics called [trac_ik](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html).  The reason for using this package was to allow better planning calculations with MoveIt! since we used it as the IK solver for the **moveit_commander** interface instead of its default IK solver plugin. More information in installing the package can be found in [here](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html). 
 
 --- 
 
->**IK Service**
+>***IK Service***
   > As part of our inverse kinematics calculations, we used a service provided by ROS that allowed us to compute the joint values for a specific target pose. This was used in conjunction with MoveIt! to allow us to get better accuracy for the arm to reach the specified pose.  
   A sample code taken from our ***move_arm_node*** can be seen so it can be easier to see how we use these services:
+
 ```
   def request_pose(pose, arm, groupl):
     # Set stamped pose
@@ -186,53 +196,22 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 
 ----
 > ***Topics Subscribed*** 
-> Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
->``` /robot/end_effector/left_gripper/state```
-> - The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
->```/robot/xdisplay```
-> - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
----
+  > Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
+  >``` /robot/end_effector/left_gripper/state```
+  > - The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
+  >```/robot/xdisplay```
+  > - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
+  
+--------------
 
 <a name="">Gazebo world</a> 
-Gazebo world
 -------------
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
 ---
 
 <a name="">Launch file</a> 
-Launch file 
 -------------
 In order to run the project, type the following:
 > ```roslaunch baxter_builder setup.launch```
 
 The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. 
-> Here is the code in the launch file.
-```
-<launch>
-  <arg name="config" default="true"/>
-  <!--Node for trajectories, used with MoveIt -->
-  <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
-  </node>   
-<!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
-  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="true"/>
-  </include>
-  <arg name="kinect" default="false" />
-  <arg name="xtion" default="false" />
-  <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
-  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
-    <arg name="kinect" value="$(arg kinect)" />
-    <arg name="xtion" value="$(arg xtion)" />
-    <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
-    <arg name="allow_trajectory_execution" value="true"/>
-  </include>
-<!--Start the move_arm node from our scripts -->
-  <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
-  </node>
-  <!--Node that uses camera to find block -->
-  <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
-  </node>
-</launch>
-
-```
-
