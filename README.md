@@ -47,42 +47,43 @@ alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
 
 >***Open CV***
+
   >We used **cv2** package for image processing, as well as **CvBridge** in order to be able to interface with ROS and Baxter. The left hand camera image was captured, converted to cv2 image and then converted to HSV format as follows:
 
-```
-bridge = CvBridge()
-cv_image = bridge.imgmsg_to_cv2(message, "bgr8")
-#Converting image to HSV format
-hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
-```
+  ```
+  bridge = CvBridge()
+  cv_image = bridge.imgmsg_to_cv2(message, "bgr8")
+  #Converting image to HSV format
+  hsv = cv2.cvtColor(cv_image, cv2.COLOR_BGR2HSV)
+  ```
 
-Later the cv_image was thresholded with green and red color HSV ranges in order to pick out the desired objects. Here is a quick example: 
+  Later the cv_image was thresholded with green and red color HSV ranges in order to pick out the desired objects. Here is a quick example: 
 
-```
-thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
-#Morphological opening (remove small objects from the foreground)
-thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
-thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
-#Morphological closing (fill small holes in the foreground)
-thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
-thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
-#cv2.threshold(source image in greyscale, threshold value which is used to classify the pixel values, the maxVal which represents the value to be given if pixel value is more than (sometimes less than) the threshold value )
-#output: retval and thresholded image
-ret,thresh = cv2.threshold(thresholded,157,255,0)
+  ```
+  thresholded = cv2.inRange(hsv, np.array([low_h, low_s, low_v]), np.array([high_h, high_s, high_v]))
+  #Morphological opening (remove small objects from the foreground)
+  thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+  thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+  #Morphological closing (fill small holes in the foreground)
+  thresholded = cv2.dilate(thresholded, np.ones((2,2), np.uint8), iterations=1)
+  thresholded = cv2.erode(thresholded, np.ones((2,2), np.uint8), iterations=1)
+  #cv2.threshold(source image in greyscale, threshold value which is used to classify the pixel values, the maxVal which represents the value to be given if pixel value is more than (sometimes less than) the threshold value )
+  #output: retval and thresholded image
+  ret,thresh = cv2.threshold(thresholded,157,255,0)
 ``` 
-Contours of the objects were found and used for the calculation of the centroid of each object. They were also drawn on top of the original image for a nice visual:
+  Contours of the objects were found and used for the calculation of the centroid of each object. They were also drawn on top of the original image for a nice visual:
 
-```
-contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
-cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
-# number of objects found in current frame
-numobj = len(contours) 
-if numobj > 0:
-    moms = cv2.moments(contours[0])
-    if moms['m00']>500:
-         cx = int(moms['m10']/moms['m00'])
-         cy = int(moms['m01']/moms['m00'])
-```
+  ```
+  contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
+  cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
+  # number of objects found in current frame
+  numobj = len(contours) 
+  if numobj > 0:
+      moms = cv2.moments(contours[0])
+      if moms['m00']>500:
+           cx = int(moms['m10']/moms['m00'])
+           cy = int(moms['m01']/moms['m00'])
+  ```
 
 
 ---
@@ -90,21 +91,21 @@ if numobj > 0:
 
   > Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
 
-```
-#Position of the object in the baxter's moving camera frame 
-cx = centres[0][0]
-cy = centres[0][1]
-pix_size = .0023 #Camera calibration (meter/pixels). Pixel size at 1 meter.
-h = .433 #Height from table/obj to camera
-x0b = .712 # x position of initial position in baxter's base frame 
-y0b = .316 # y position of initial position in baxter's base frame 
-x_camera_offset = .02 #x camera offset from center of the gripper  
-y_camera_offset = -.02 #y camera offset from center of the gripper 
-# height, width, depth = cv_image.shape #camera frame dimensions 
-#Position of the object in the baxter's stationary base frame
-xb = (cy - (height/2))*pix_size*h + x0b + x_camera_offset 
-yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
-```
+  ```
+  #Position of the object in the baxter's moving camera frame 
+  cx = centres[0][0]
+  cy = centres[0][1]
+  pix_size = .0023 #Camera calibration (meter/pixels). Pixel size at 1 meter.
+  h = .433 #Height from table/obj to camera
+  x0b = .712 # x position of initial position in baxter's base frame 
+  y0b = .316 # y position of initial position in baxter's base frame 
+  x_camera_offset = .02 #x camera offset from center of the gripper  
+  y_camera_offset = -.02 #y camera offset from center of the gripper 
+  # height, width, depth = cv_image.shape #camera frame dimensions 
+  #Position of the object in the baxter's stationary base frame
+  xb = (cy - (height/2))*pix_size*h + x0b + x_camera_offset 
+  yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
+  ```
 
 ---
 > ***Object Location Service Provider***
@@ -125,13 +126,15 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 ----
 > ***Topics Subscribed*** 
 
-> The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
+  The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
 
-``` /cameras/left_hand_camera/image```
+  ``` /cameras/left_hand_camera/image```
 
-> This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
+
+  This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
 -----
+
 
 <a name="">move_arm_node</a> 
 -------------
@@ -139,6 +142,7 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 All related Baxter movements and inverse kinematics calculations were done in the **move_arm_node**. There are various packages and services that we used for the movement. They are as follow:
 
 >***MoveIt!***
+
   >We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
 
 ```left_group = MoveGroupCommander("left_arm")```
@@ -211,7 +215,8 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 
   > This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
---------------
+----
+
 
 <a name="">Gazebo world</a> 
 -------------
@@ -220,10 +225,12 @@ A Gazebo world, containing Baxter robot along with a table and a few objects, wa
 
 -------
 
+
 <a name="">Launch file</a> 
 -------------
 In order to run the project, type the following:
-> ```roslaunch baxter_builder setup.launch```
+
+```roslaunch baxter_builder setup.launch```
 
 The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. Here is the setup.launch code:
 
