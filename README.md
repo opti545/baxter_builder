@@ -7,12 +7,12 @@ Instructor:  Jarvis Schultz
 Team members: Jose Miranda, Sofya Akhmametyeva, Yves Nazon and Tanay Choudhary
 
 ### Table of contents
-[Overview](#Overview)
-[Required tools and set up](#Required tools and set up)
-[left_camera_node](#left_camera_node)
-[move_arm_node](#move_arm_node)
-[Gazebo world](#Gazebo world)
-[Launch file](#Launch file)
+- [Overview](#Overview)
+- [Required tools and set up](#Required tools and set up)
+- [left_camera_node](#left_camera_node)
+- [move_arm_node](#move_arm_node)
+- [Gazebo world](#Gazebo world)
+- [Launch file](#Launch file)
 
 <a name="Overview"></a> 
 Overview
@@ -71,7 +71,6 @@ Contours of the objects were found and used for the calculation of the centroid 
 ```
 contours, hierarchy = cv2.findContours(thresh,cv2.RETR_TREE,cv2.CHAIN_APPROX_NONE)
 cv2.drawContours(cv_image, contours, -1, (0,255,0), 3)
-
 # number of objects found in current frame
 numobj = len(contours) 
 if numobj > 0:
@@ -79,7 +78,6 @@ if numobj > 0:
     if moms['m00']>500:
          cx = int(moms['m10']/moms['m00'])
          cy = int(moms['m01']/moms['m00'])
-
 ```
 
 
@@ -90,7 +88,6 @@ if numobj > 0:
 #Position of the object in the baxter's moving camera frame 
 cx = centres[0][0]
 cy = centres[0][1]
-
 pix_size = .0023 #Camera calibration (meter/pixels). Pixel size at 1 meter.
 h = .433 #Height from table/obj to camera
 x0b = .712 # x position of initial position in baxter's base frame 
@@ -98,7 +95,6 @@ y0b = .316 # y position of initial position in baxter's base frame
 x_camera_offset = .02 #x camera offset from center of the gripper  
 y_camera_offset = -.02 #y camera offset from center of the gripper 
 # height, width, depth = cv_image.shape #camera frame dimensions 
-
 #Position of the object in the baxter's stationary base frame
 xb = (cy - (height/2))*pix_size*h + x0b + x_camera_offset 
 yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
@@ -112,11 +108,11 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
    - X coordinate of the centroid of the desired object in the Baxter's base frame.
  > - float32 yb 
    - Y coordinate of the centroid of the desired object in the Baxter's base frame.
-> - float32 zb
+ > - float32 zb
    - Z coordinate of the centroid of the desired object in the Baxter's base frame. (Currently not using it)
-> - bool objfound 
+ > - bool objfound 
    - True if green or blue objects were found and False otherwise.
-> - int8 objcolor
+ > - int8 objcolor
    - Used for our perception sorting multiplier (currently green or red object). 
 
 ----
@@ -196,11 +192,13 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 > - The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
 >```/robot/xdisplay```
 > - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
+---
 
 <a name="">Gazebo world</a> 
 Gazebo world
 -------------
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
+---
 
 <a name="">Launch file</a> 
 Launch file 
@@ -213,19 +211,13 @@ The setup.launch file will start up both the  move_arm_node and the left_camera_
 ```
 <launch>
   <arg name="config" default="true"/>
-
-
   <!--Node for trajectories, used with MoveIt -->
   <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
   </node>   
-
 <!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
-
   <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
   </include>
-
-
   <arg name="kinect" default="false" />
   <arg name="xtion" default="false" />
   <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
@@ -235,11 +227,9 @@ The setup.launch file will start up both the  move_arm_node and the left_camera_
     <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
     <arg name="allow_trajectory_execution" value="true"/>
   </include>
-
 <!--Start the move_arm node from our scripts -->
   <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
   </node>
-
   <!--Node that uses camera to find block -->
   <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
   </node>
