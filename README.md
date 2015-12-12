@@ -126,12 +126,11 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
 ----
 > ***Topics Subscribed*** 
 
-  The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
+  > The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
 
   ``` /cameras/left_hand_camera/image```
 
-
-  This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
+  > This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
 -----
 
@@ -143,11 +142,11 @@ All related Baxter movements and inverse kinematics calculations were done in th
 
 >***MoveIt!***
 
-  >We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
+  > We were able to use the MoveIt! package to work with Baxter. Essentially, this package is powerful enough for motion planning and manipulation and it makes an easy interface to work with Baxter. There are some various Python Interfaces with MoveIt! that we took in for our advantage. The most important interface that we took from MoveIt! is the **moveit_commander**. This package allowed us to control Baxter's arm by simply calling for example the following:
 
 ```left_group = MoveGroupCommander("left_arm")```
 
-This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  
+  > This allowed us to use ***left_group*** for saying things like plan a joint state plan and execute it using simple things as follow:  
 ```
       plan2= left_group.plan(limb_joints)
           rospy.sleep(1.5)
@@ -155,7 +154,7 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
           rospy.sleep(0.25)
   ``` 
 
-  In addition, we were able to use one of the recent released packages for Inverse Kinematics called [trac_ik](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html).  The reason for using this package was to allow better planning calculations with MoveIt! since we used it as the IK solver for the **moveit_commander** interface instead of its default IK solver plugin. More information in installing the package can be found in [here](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html). 
+  > In addition, we were able to use one of the recent released packages for Inverse Kinematics called [trac_ik](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html).  The reason for using this package was to allow better planning calculations with MoveIt! since we used it as the IK solver for the **moveit_commander** interface instead of its default IK solver plugin. More information in installing the package can be found in [here](http://www.ros.org/news/2015/11/introducing-a-better-inverse-kinematics-package.html). 
 
 --- 
 
