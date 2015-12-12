@@ -128,7 +128,9 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
 
   The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
 
-  ``` /cameras/left_hand_camera/image```
+  ``` 
+  /cameras/left_hand_camera/image
+  ```
 
   This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
