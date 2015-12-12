@@ -161,6 +161,7 @@ All related Baxter movements and inverse kinematics calculations were done in th
 --- 
 
 ***IK Service***
+
   As part of our inverse kinematics calculations, we used a service provided by ROS that allowed us to compute the joint values for a specific target pose. This was used in conjunction with MoveIt! to allow us to get better accuracy for the arm to reach the specified pose.  
   A sample code taken from our ***move_arm_node*** can be seen so it can be easier to see how we use these services:
 
@@ -201,26 +202,32 @@ All related Baxter movements and inverse kinematics calculations were done in th
 ```
 ---
 ***Object Location Service Client***
+
   Within our framework, we used the Service Server/Client infrastructure to get target poses of our objects to pick up. The ***move_arm_node*** was the client requesting a location of objects through an empty message request. The response that the node gets contains information about whether a green/red object was found in the current field of vision, the color and the (x,y,z) location of the object.
 
 
 ---
 ***Topics Subscribed*** 
+
   Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
 
-  ``` /robot/end_effector/left_gripper/state```
+  ``` 
+  /robot/end_effector/left_gripper/state
+  ```
 
   The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
 
-  ```/robot/xdisplay```
+  ```
+  /robot/xdisplay
+  ```
 
   This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
-----------
+---
 
 
 <a name="">Gazebo world</a> 
--------------
+-------
 
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
 
@@ -228,7 +235,7 @@ A Gazebo world, containing Baxter robot along with a table and a few objects, wa
 
 
 <a name="">Launch file</a> 
--------------
+---
 In order to run the project, type the following:
 
 ```roslaunch baxter_builder setup.launch```
@@ -268,4 +275,4 @@ The setup.launch file will start up both the  move_arm_node and the left_camera_
   </node>
 </launch>
 '''
-
+---
