@@ -87,6 +87,7 @@ if numobj > 0:
 
 ---
 >***Object position calculation***
+
   > Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
 
 ```
@@ -107,6 +108,7 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 
 ---
 > ***Object Location Service Provider***
+
   > The *left_camera_node* provides ***object_location_service***. When *move_arm_node* sends an (empty) request, *left_camera_node* tries to find the desired object within a current camera frame via image processing and send back a response with the following structure:
 
  > - float32 xb 
@@ -122,7 +124,9 @@ yb = (cx - (width/2))*pix_size*h + y0b  + y_camera_offset
 
 ----
 > ***Topics Subscribed*** 
+
 > The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
+
 ``` /cameras/left_hand_camera/image```
 
 > This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
@@ -198,10 +202,14 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 ----
 > ***Topics Subscribed*** 
   > Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
-  >``` /robot/end_effector/left_gripper/state```
-  > - The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
-  >```/robot/xdisplay```
-  > - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
+
+  ``` /robot/end_effector/left_gripper/state```
+
+  > The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
+
+  ```/robot/xdisplay```
+
+  > This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
 --------------
 
@@ -210,7 +218,7 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
 
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
 
----
+-------
 
 <a name="">Launch file</a> 
 -------------
@@ -219,11 +227,9 @@ In order to run the project, type the following:
 
 The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. Here is the setup.launch code:
 
-> 
 '''
 <launch>
   <arg name="config" default="true"/>
-
 
   <!--Node for trajectories, used with MoveIt -->
   <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
@@ -234,7 +240,6 @@ The setup.launch file will start up both the  move_arm_node and the left_camera_
   <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
     <arg name="load_robot_description" value="true"/>
   </include>
-
 
   <arg name="kinect" default="false" />
   <arg name="xtion" default="false" />
@@ -254,6 +259,5 @@ The setup.launch file will start up both the  move_arm_node and the left_camera_
   <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
   </node>
 </launch>
-
 '''
 
