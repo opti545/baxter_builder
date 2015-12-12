@@ -16,6 +16,7 @@ Team members: Jose Miranda, Sofya Akhmametyeva, Yves Nazon and Tanay Choudhary
 - [Launch file](#Launch file)
 
 <a name="Overview"></a> 
+Overview
 -------------
 
 The goal of the project was to have Baxter detect objects via left hand camera and sort them into two boxes based on green and red colors. MoveIt! package and IK Service were leveraged for the movement and path planning. Open CV library was used for the image processing and object detection.
@@ -201,12 +202,14 @@ This allowed us to use ***left_group*** for saying things like plan a joint stat
   > - The above topic is used to detect the force applied to the left gripper of Baxter's arm so that we can use it to determine if it grabbed the block or not. If not, then we can return to the vision pose and not do the whole motion of dropping empty things and going back to the vision pose (basically to minimize  trajectory execution if we did not grab something).
   >```/robot/xdisplay```
   > - This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
-  
+
 --------------
 
 <a name="">Gazebo world</a> 
 -------------
+
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
+
 ---
 
 <a name="">Launch file</a> 
@@ -214,4 +217,43 @@ A Gazebo world, containing Baxter robot along with a table and a few objects, wa
 In order to run the project, type the following:
 > ```roslaunch baxter_builder setup.launch```
 
-The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. 
+The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. Here is the setup.launch code:
+
+> 
+'''
+<launch>
+  <arg name="config" default="true"/>
+
+
+  <!--Node for trajectories, used with MoveIt -->
+  <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
+  </node>   
+
+<!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
+
+  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+    <arg name="load_robot_description" value="true"/>
+  </include>
+
+
+  <arg name="kinect" default="false" />
+  <arg name="xtion" default="false" />
+  <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
+  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+    <arg name="kinect" value="$(arg kinect)" />
+    <arg name="xtion" value="$(arg xtion)" />
+    <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
+    <arg name="allow_trajectory_execution" value="true"/>
+  </include>
+
+  <!--Start the move_arm node from our scripts -->
+  <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
+  </node>
+
+  <!--Node that uses camera to find block -->
+  <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
+  </node>
+</launch>
+
+'''
+
