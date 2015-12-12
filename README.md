@@ -243,6 +243,7 @@ In order to run the project, type the following:
 The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. Here is the setup.launch code:
 
 ```
+
   <launch>
     <arg name="config" default="true"/>
 
