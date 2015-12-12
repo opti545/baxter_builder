@@ -202,7 +202,7 @@ All related Baxter movements and inverse kinematics calculations were done in th
   > WIthin our framework, we used the Service Server/Client infrastructure to get target poses of our objects to pick up. The ***move_arm_node*** was the client requesting a location of objects through an empty message request. The response that the node gets contains information about whether a green/red object was found in the current field of vision, the color and the (x,y,z) location of the object.
 
 
-----
+---
 > ***Topics Subscribed*** 
   > Within our ***move_arm_node***, there are several topics we subscibred to for a variety of features that we offered. They are as follow:
 
@@ -214,8 +214,8 @@ All related Baxter movements and inverse kinematics calculations were done in th
 
   > This topic was used to display images to the head monitor of Baxter. There are some hard coded links for the pictures that may run into errors when trying to run our nodes. Changing the path of the image might be better solution, or just commenting the portion where it publishes the image.
 
-----
-
+---
+----------
 
 <a name="">Gazebo world</a> 
 -------------
