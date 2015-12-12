@@ -243,38 +243,36 @@ In order to run the project, type the following:
 The setup.launch file will start up both the  move_arm_node and the left_camera_node, as well as the baxter's interface trajectory_node and the necessary setup for the MoveIt configuration. Here is the setup.launch code:
 
 '''
+  <launch>
+    <arg name="config" default="true"/>
 
-<launch>
-  <arg name="config" default="true"/>
+    <!--Node for trajectories, used with MoveIt -->
+    <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
+    </node>   
 
-  <!--Node for trajectories, used with MoveIt -->
-  <node pkg="baxter_interface" type="joint_trajectory_action_server.py" name="trajectory_node" output="log" >
-  </node>   
+    <!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
 
-  <!-- Taken from the demo_baxter.launch in the baxter_moveit_config-->
+    <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
+      <arg name="load_robot_description" value="true"/>
+    </include>
 
-  <include file="$(find baxter_moveit_config)/launch/planning_context.launch">
-    <arg name="load_robot_description" value="true"/>
-  </include>
+    <arg name="kinect" default="false" />
+    <arg name="xtion" default="false" />
+    <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
+    <include file="$(find baxter_moveit_config)/launch/move_group.launch">
+      <arg name="kinect" value="$(arg kinect)" />
+      <arg name="xtion" value="$(arg xtion)" />
+      <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
+      <arg name="allow_trajectory_execution" value="true"/>
+    </include>
 
-  <arg name="kinect" default="false" />
-  <arg name="xtion" default="false" />
-  <arg name="camera_link_pose" default="0.15 0.075 0.5 0.0 0.7854 0.0"/>
-  <include file="$(find baxter_moveit_config)/launch/move_group.launch">
-    <arg name="kinect" value="$(arg kinect)" />
-    <arg name="xtion" value="$(arg xtion)" />
-    <arg name="camera_link_pose" default="$(arg camera_link_pose)"/>
-    <arg name="allow_trajectory_execution" value="true"/>
-  </include>
+    <!--Start the move_arm node from our scripts -->
+    <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
+    </node>
 
-  <!--Start the move_arm node from our scripts -->
-  <node pkg="baxter_builder" type="baxter_mover.py" name="move_arm_node" output ="screen">
-  </node>
-
-  <!--Node that uses camera to find block -->
-  <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
-  </node>
-</launch> 
-
+    <!--Node that uses camera to find block -->
+    <node pkg="baxter_builder" type="left_vision_obj_location.py" name="camera_node" output="screen">
+    </node>
+  </launch> 
 '''
 ---
