@@ -42,7 +42,6 @@ alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 
 
 <a name="">left_camera_node</a> 
-left_camera_node
 -------------
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
 
