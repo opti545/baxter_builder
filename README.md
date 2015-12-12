@@ -43,6 +43,7 @@ alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 ------------
 
 <a name="">left_camera_node</a> 
+left_camera_node
 -------------
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
 
@@ -137,7 +138,8 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
 -----
 
 
-<a name="">move_arm_node</a> 
+<a name="">move_arm_node</a>
+move_arm_node 
 -------------
 
 All related Baxter movements and inverse kinematics calculations were done in the **move_arm_node**. There are various packages and services that we used for the movement. They are as follow:
@@ -227,6 +229,7 @@ All related Baxter movements and inverse kinematics calculations were done in th
 
 
 <a name="">Gazebo world</a> 
+Gazebo world
 -------
 
 A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
@@ -235,6 +238,7 @@ A Gazebo world, containing Baxter robot along with a table and a few objects, wa
 
 
 <a name="">Launch file</a> 
+Launch file
 ---
 In order to run the project, type the following:
 
