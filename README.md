@@ -233,7 +233,18 @@ All related Baxter movements and inverse kinematics calculations were done in th
 Gazebo world
 -------
 
-A Gazebo world, containing Baxter robot along with a table and a few objects, was created for testing and visualization. Please see the world/ folder for the necessary configuration files. 
+Due to the limited number of Baxters available for testing we turned to computer simulation,
+specifically Gazebo, for early validation of our nodes. We started with the baxter.world file that
+included a complete model of the Baxter robot. From there we created a custom Gazebo world
+using Gazebo's GUI to add competition relevant objects such as colored blocks, balls, and tables to
+our world. Next we edited the newly constructed SDF file to properly model the vision and
+collision properties of these objects. Finally we manually configured the world objects in various
+manners to see how Baxter dealt with different testing configurations. Gazebo allowed us to
+rapidly iterate our code by giving us the ability to immediately see how changes to our node would
+affect Baxter's performance. While simulation is never a perfect representation of the real world, it
+was a great starting place for us.
+
+
 
 -------
 
