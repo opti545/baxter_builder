@@ -46,9 +46,9 @@ alias bxb="unset ROS_IP; unset ROS_HOSTNAME; unset ROS_MASTER_URI; export ROS_IP
 -------------
 The *left_vision_obj_location.py* script instantiates the left_camera_node. This node subscribes to the */cameras/left_hand_camera/image* topic and performs image processing, finds the location of a desired object and provides that information via a custom *ObjLocation service* . In more detail about the various packages and services that were used for the image processing, please see below:
 
->***Open CV***
+***Open CV***
 
-  >We used **cv2** package for image processing, as well as **CvBridge** in order to be able to interface with ROS and Baxter. The left hand camera image was captured, converted to cv2 image and then converted to HSV format as follows:
+  We used **cv2** package for image processing, as well as **CvBridge** in order to be able to interface with ROS and Baxter. The left hand camera image was captured, converted to cv2 image and then converted to HSV format as follows:
 
   ```
   bridge = CvBridge()
@@ -87,9 +87,9 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
 
 
 ---
->***Object position calculation***
+***Object position calculation***
 
-  > Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
+  Once the contours of the objects are found, the centroids of those objects are calculated in the camera frame. Then the coordinates are changed from left hand camera's moving frame to Baxter's stationary base frame, as follows:
 
   ```
   #Position of the object in the baxter's moving camera frame 
@@ -108,29 +108,29 @@ The *left_vision_obj_location.py* script instantiates the left_camera_node. This
   ```
 
 ---
-> ***Object Location Service Provider***
+***Object Location Service Provider***
 
-  > The *left_camera_node* provides ***object_location_service***. When *move_arm_node* sends an (empty) request, *left_camera_node* tries to find the desired object within a current camera frame via image processing and send back a response with the following structure:
+  The *left_camera_node* provides ***object_location_service***. When *move_arm_node* sends an (empty) request, *left_camera_node* tries to find the desired object within a current camera frame via image processing and send back a response with the following structure:
 
- > - float32 xb 
+ - float32 xb 
    - X coordinate of the centroid of the desired object in the Baxter's base frame.
- > - float32 yb 
+ - float32 yb 
    - Y coordinate of the centroid of the desired object in the Baxter's base frame.
- > - float32 zb
+ - float32 zb
    - Z coordinate of the centroid of the desired object in the Baxter's base frame. (Currently not using it)
- > - bool objfound 
+ - bool objfound 
    - True if green or blue objects were found and False otherwise.
- > - int8 objcolor
+ - int8 objcolor
    - Used for our perception sorting multiplier (currently green or red object). 
 
 ----
-> ***Topics Subscribed*** 
+***Topics Subscribed*** 
 
-  > The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
+  The **left_camera_node** subscribes to the following topic with the Baxter's left hand camera feed:
 
   ``` /cameras/left_hand_camera/image```
 
-  > This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
+  This camera image is later processed using Open CV libraries as described above in order to extract a centroid location of a desired object.
 
 -----
 
